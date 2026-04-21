@@ -1,8 +1,8 @@
 ---
-title: 20260421 GASDocumentation으로 배우는 GAS 분권형 교재
+title: 260421 GASDocumentation으로 배우는 GAS 분권형 교재
 ---
 
-# 20260421 GASDocumentation으로 배우는 GAS 분권형 교재
+# 260421 GASDocumentation으로 배우는 GAS 분권형 교재
 
 ## 문서 개요
 

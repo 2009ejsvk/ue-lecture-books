@@ -1,5 +1,5 @@
 ---
-title: 20260421 중급 2편 - 초기화와 Ability 지급
+title: 260421 중급 2편 - 초기화와 Ability 지급
 ---
 
 # 중급 2편. 초기화와 Ability 지급

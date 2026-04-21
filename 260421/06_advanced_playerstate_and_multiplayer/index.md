@@ -1,5 +1,5 @@
 ---
-title: 20260421 고급 2편 - PlayerState와 멀티플레이 구조
+title: 260421 고급 2편 - PlayerState와 멀티플레이 구조
 ---
 
 # 고급 2편. PlayerState와 멀티플레이 구조

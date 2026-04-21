@@ -1,5 +1,5 @@
 ---
-title: 20260421 초급 2편 - Jump Ability로 보는 GAS 생명주기
+title: 260421 초급 2편 - Jump Ability로 보는 GAS 생명주기
 ---
 
 # 초급 2편. Jump Ability로 보는 GAS 생명주기

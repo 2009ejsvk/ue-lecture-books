@@ -1,5 +1,5 @@
 ---
-title: 20260421 중급 1편 - AttributeSet과 GameplayEffect 후처리
+title: 260421 중급 1편 - AttributeSet과 GameplayEffect 후처리
 ---
 
 # 중급 1편. AttributeSet과 GameplayEffect 후처리
