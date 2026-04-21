@@ -9,6 +9,7 @@ title: UE Lecture Books
 
 ## 교재 목록
 
+- [260401. 언리얼 프로젝트와 블루프린트 입문](./260401/)
 - [260402. 플레이어 블루프린트와 발사체 기초](./260402/)
 - [260403. 충돌, 태그, 트리거 기반 기믹 입문](./260403/)
 - [260406. 플레이어 C++ 전환과 입력 시스템 기초](./260406/)
@@ -28,6 +29,7 @@ title: UE Lecture Books
 
 ## 현재 포함된 주제
 
+- `260401`: 프로젝트 생성, 템플릿, 언리얼 에디터, UObject, Actor, Component, Pawn, Character, Blueprint 기초
 - `260402`: Skeletal Mesh, Movement Component, Spring Arm, Camera, IA_Move, IA_Attack, BPBullet, Spawn Actor
 - `260403`: Block/Overlap/Ignore, Projectile Stop, Actor Tag, Timer, Trigger Box, Level Blueprint
 - `260406`: PlayerCharacter, Shinbi, DefaultGameMode, InputData, MappingContext, Rotation, Jump, Attack
@@ -42,6 +44,7 @@ title: UE Lecture Books
 ## 저장소 구조
 
 - `index.md`: 루트 서가
+- `260401/index.md`: 2026-04-01 강의 교재
 - `260402/index.md`: 2026-04-02 강의 교재
 - `260403/index.md`: 2026-04-03 강의 교재
 - `260406/index.md`: 2026-04-06 강의 교재
@@ -52,4 +55,4 @@ title: UE Lecture Books
 - `260415/index.md`: 2026-04-15 강의 교재
 - `260416/index.md`: 2026-04-16 강의 교재
 - `260417/index.md`: 2026-04-17 강의 교재
-- `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
