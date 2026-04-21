@@ -69,6 +69,8 @@ title: 260421 고급 2편 - PlayerState와 멀티플레이 구조
 여기서 핵심 한 줄은 아래다.
 
 ```cpp
+// Owner는 PlayerState,
+// Avatar는 실제 몸체인 Character로 연결한다.
 PS->GetAbilitySystemComponent()->InitAbilityActorInfo(PS, this);
 ```
 

@@ -42,9 +42,13 @@ title: 260421 중급 1편 - AttributeSet과 GameplayEffect 후처리
 
 ```cpp
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
+    // "이 Attribute 자체"를 가리키는 핸들을 만든다.
     GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+    // 현재 값을 읽는 Getter를 만든다.
     GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+    // 값을 직접 바꾸는 Setter를 만든다.
     GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+    // 시작값을 넣는 Init 함수를 만든다.
     GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 ```
 
@@ -62,6 +66,8 @@ title: 260421 중급 1편 - AttributeSet과 GameplayEffect 후처리
 이 예제에서 가장 중요한 Attribute는 `Damage`다.
 
 ```cpp
+// 이 값은 진짜 HP가 아니라
+// "이번 공격이 얼마였는가"를 잠깐 담는 메타 Attribute다.
 UPROPERTY(BlueprintReadOnly, Category = "Damage")
 FGameplayAttributeData Damage;
 ```

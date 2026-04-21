@@ -21,8 +21,14 @@ title: 260421 초급 2편 - Jump Ability로 보는 GAS 생명주기
 ```cpp
 UGDGA_CharacterJump::UGDGA_CharacterJump()
 {
+    // 이 Ability를 Jump 입력 슬롯에 연결한다.
     AbilityInputID = EGDAbilityInputID::Jump;
+
+    // 점프는 상태를 거의 들고 있지 않아서
+    // 인스턴스를 따로 만들지 않는 NonInstanced를 쓴다.
     InstancingPolicy = EGameplayAbilityInstancingPolicy::NonInstanced;
+
+    // 이 Ability가 점프 Ability라는 태그를 붙인다.
     AbilityTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Jump")));
 }
 ```
@@ -43,11 +49,14 @@ UGDGA_CharacterJump::UGDGA_CharacterJump()
 ```cpp
 bool UGDGA_CharacterJump::CanActivateAbility(...) const
 {
+    // 먼저 GAS 기본 검사부터 통과해야 한다.
     if (!Super::CanActivateAbility(...))
     {
         return false;
     }
 
+    // 그 다음 우리 게임 전용 검사:
+    // 실제 캐릭터가 지금 점프 가능한 상태인지 본다.
     const AGDCharacterBase* Character =
         CastChecked<AGDCharacterBase>(ActorInfo->AvatarActor.Get(), ECastCheckedType::NullAllowed);
     return Character && Character->CanJump();
@@ -72,13 +81,19 @@ bool UGDGA_CharacterJump::CanActivateAbility(...) const
 ```cpp
 void UGDGA_CharacterJump::ActivateAbility(...)
 {
+    // 서버이거나 예측 권한이 있는 경우에만 실제 실행한다.
     if (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo))
     {
+        // Ability 사용을 확정한다.
+        // 코스트/쿨다운이 있으면 여기서 적용된다.
         if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
         {
+            // 확정에 실패하면 Ability를 종료한다.
             EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         }
 
+        // 실제 몸체를 Character로 꺼내서
+        // 언리얼 기본 Jump()를 호출한다.
         ACharacter* Character = CastChecked<ACharacter>(ActorInfo->AvatarActor.Get());
         Character->Jump();
     }
@@ -116,6 +131,7 @@ void UGDGA_CharacterJump::ActivateAbility(...)
 ```cpp
 void UGDGA_CharacterJump::InputReleased(...)
 {
+    // 버튼을 떼면 Ability를 취소한다.
     if (ActorInfo != NULL && ActorInfo->AvatarActor != NULL)
     {
         CancelAbility(Handle, ActorInfo, ActivationInfo, true);
@@ -131,14 +147,18 @@ void UGDGA_CharacterJump::InputReleased(...)
 ```cpp
 void UGDGA_CharacterJump::CancelAbility(...)
 {
+    // 지금 바로 취소하기 위험한 잠금 상태라면
+    // 나중에 다시 실행하도록 예약한다.
     if (ScopeLockCount > 0)
     {
         WaitingToExecute.Add(...);
         return;
     }
 
+    // GAS 기본 취소 처리를 수행한다.
     Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
 
+    // 그리고 실제 점프도 멈춘다.
     ACharacter* Character = CastChecked<ACharacter>(ActorInfo->AvatarActor.Get());
     Character->StopJumping();
 }

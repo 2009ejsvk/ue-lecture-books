@@ -36,9 +36,11 @@ title: 260421 중급 2편 - 초기화와 Ability 지급
 이 예제는 `DefaultAttributes`라는 GameplayEffect를 자기 자신에게 적용한다.
 
 ```cpp
+// DefaultAttributes GameplayEffect의 Spec을 만든다.
 FGameplayEffectSpecHandle NewHandle =
     AbilitySystemComponent->MakeOutgoingSpec(DefaultAttributes, GetCharacterLevel(), EffectContext);
 
+// 만든 Spec을 자기 자신에게 적용해서 시작 스탯을 세팅한다.
 AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(
     *NewHandle.Data.Get(), AbilitySystemComponent.Get());
 ```
@@ -76,6 +78,7 @@ AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(
 ## `AddCharacterAbilities()`는 서버에서만 한다
 
 ```cpp
+// 서버가 아니거나, ASC가 없거나, 이미 한 번 지급했다면 종료한다.
 if (GetLocalRole() != ROLE_Authority || !AbilitySystemComponent.IsValid() || AbilitySystemComponent->bCharacterAbilitiesGiven)
 {
     return;

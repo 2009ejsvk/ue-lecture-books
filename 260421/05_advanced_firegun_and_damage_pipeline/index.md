@@ -50,10 +50,17 @@ title: 260421 고급 1편 - FireGun과 데미지 파이프라인
 먼저 몽타주를 재생하고, 그 안에서 특정 이벤트가 왔을 때 실제 발사를 한다.
 
 ```cpp
+// "총쏘기 몽타주 재생 + 이벤트 대기"용 AbilityTask를 만든다.
 UGDAT_PlayMontageAndWaitForEvent* Task =
     UGDAT_PlayMontageAndWaitForEvent::PlayMontageAndWaitForEvent(...);
+
+// 몽타주가 끝나면 Ability도 끝낼 수 있게 델리게이트를 연결한다.
 Task->OnCompleted.AddDynamic(this, &UGDGA_FireGun::OnCompleted);
+
+// 애니메이션 이벤트가 오면 EventReceived()에서 처리한다.
 Task->EventReceived.AddDynamic(this, &UGDGA_FireGun::EventReceived);
+
+// AbilityTask를 실제로 시작한다.
 Task->ReadyForActivation();
 ```
 
@@ -71,9 +78,11 @@ Task->ReadyForActivation();
 핵심 코드는 아래다.
 
 ```cpp
+// 데미지용 GameplayEffect Spec을 만든다.
 FGameplayEffectSpecHandle DamageEffectSpecHandle =
     MakeOutgoingGameplayEffectSpec(DamageGameplayEffect, GetAbilityLevel());
 
+// "이번 공격 데미지 값"을 SetByCaller로 런타임에 넣는다.
 DamageEffectSpecHandle.Data.Get()->SetSetByCallerMagnitude(
     FGameplayTag::RequestGameplayTag(FName("Data.Damage")), Damage);
 ```
@@ -93,6 +102,7 @@ DamageEffectSpecHandle.Data.Get()->SetSetByCallerMagnitude(
 예제 계산식은 단순하다.
 
 ```cpp
+// 방어력이 높을수록 최종 피해가 줄어드는 공식이다.
 float MitigatedDamage = (UnmitigatedDamage) * (100 / (100 + Armor));
 ```
 
@@ -100,6 +110,8 @@ float MitigatedDamage = (UnmitigatedDamage) * (100 / (100 + Armor));
 대신 `Damage` 메타 Attribute에 결과를 적는다.
 
 ```cpp
+// 계산된 최종 피해를 HP에 바로 꽂지 않고,
+// Damage 메타 Attribute에 먼저 적어 둔다.
 OutExecutionOutput.AddOutputModifier(
     FGameplayModifierEvaluatedData(
         DamageStatics().DamageProperty,
