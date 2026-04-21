@@ -11,6 +11,7 @@ title: UE Lecture Books
 
 - [260415. 몬스터 스폰과 순찰 AI 기초](./260415/)
 - [260416. 몬스터 전투 AI 루프](./260416/)
+- [260417. 몬스터 비전투 루프와 순찰 디버깅](./260417/)
 
 ## 읽는 방식
 
@@ -22,10 +23,12 @@ title: UE Lecture Books
 
 - `260415`: SpawnPoint, PatrolPath, Behavior Tree 등록, Perception, Move To
 - `260416`: MonsterAnimInstance, MonsterTrace Task, MonsterAttack Task, AnimNotify 기반 전투 루프
+- `260417`: Monster Wait Task, Monster Patrol Task, 엔진/에디터 버그 수정
 
 ## 저장소 구조
 
 - `index.md`: 루트 서가
 - `260415/index.md`: 2026-04-15 강의 교재
 - `260416/index.md`: 2026-04-16 강의 교재
-- `260415/assets/images`, `260416/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260417/index.md`: 2026-04-17 강의 교재
+- `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
