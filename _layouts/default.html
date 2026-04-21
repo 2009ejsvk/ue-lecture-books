@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ page.title | default: site.description }}">
+    <meta name="color-scheme" content="dark light">
+    <script>
+      (function () {
+        var storageKey = "ue-books-theme-mode";
+        var stored = null;
+        try {
+          stored = localStorage.getItem(storageKey);
+        } catch (error) {}
+        var mode = stored || "dark";
+        var media = window.matchMedia("(prefers-color-scheme: dark)");
+        var resolved = mode === "auto" ? (media.matches ? "dark" : "light") : mode;
+        document.documentElement.setAttribute("data-theme", resolved);
+        document.documentElement.setAttribute("data-theme-mode", mode);
+      })();
+    </script>
+    <link rel="stylesheet" href="{{ '/assets/theme.css' | relative_url }}">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="site-title" href="{{ '/' | relative_url }}">{{ site.title }}</a>
+        <div class="theme-toggle" role="group" aria-label="Theme mode">
+          <button class="theme-button" type="button" data-theme-option="light">Light</button>
+          <button class="theme-button" type="button" data-theme-option="dark">Dark</button>
+          <button class="theme-button" type="button" data-theme-option="auto">Auto</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <article class="markdown-body">
+          {{ content }}
+        </article>
+      </main>
+    </div>
+
+    <script src="{{ '/assets/theme.js' | relative_url }}" defer></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+title: UE Lecture Books
+description: Markdown 기반 언리얼 강의 교재 아카이브
+markdown: kramdown
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: default
