@@ -1,18 +1,22 @@
 # UE Lecture Books
 
-Unreal Engine lecture notes organized as static HTML lecture books for GitHub Pages.
+Markdown 기반 언리얼 강의 교재 저장소입니다.
 
-## Books
+## 교재
 
-- `260415`: SpawnPoint, Patrol, Target / MoveTo
-- `260416`: Monster AnimInstance, Trace, Attack
+- [260415. 몬스터 스폰과 순찰 AI 기초](./260415/)
+- [260416. 몬스터 전투 AI 루프](./260416/)
 
-## Structure
+## 원칙
 
-- `index.html`: GitHub Pages root entry
-- `shared-styles.css`: shared visual system for all books
-- `260415/`, `260416/`: per-date lecture books
+- HTML 대시보드 형식 제거
+- PPT 형식 제거
+- Markdown 문서 중심 구성
+- 날짜별 폴더에는 `index.md`와 `assets`만 유지
 
-## Pages
+## 현재 구조
 
-Designed to be published from the repository root with GitHub Pages.
+- `index.md`: 루트 서가
+- `260415/index.md`: 2026-04-15 교재
+- `260416/index.md`: 2026-04-16 교재
+- `260415/assets/images`, `260416/assets/images`: 원본 영상에서 다시 추출한 캡처
