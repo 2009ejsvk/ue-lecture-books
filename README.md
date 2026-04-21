@@ -15,6 +15,7 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - [260415. 몬스터 스폰과 순찰 AI 기초](./260415/)
 - [260416. 몬스터 전투 AI 루프](./260416/)
 - [260417. 몬스터 비전투 루프와 순찰 디버깅](./260417/)
+- [260420. 몬스터 사망, 랙돌, 아이템 박스 드롭](./260420/)
 
 ## 원칙
 
@@ -37,4 +38,5 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - `260415/index.md`: 2026-04-15 교재
 - `260416/index.md`: 2026-04-16 교재
 - `260417/index.md`: 2026-04-17 교재
-- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260420/index.md`: 2026-04-20 교재
+- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처

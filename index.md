@@ -20,6 +20,7 @@ title: UE Lecture Books
 - [260415. 몬스터 스폰과 순찰 AI 기초](./260415/)
 - [260416. 몬스터 전투 AI 루프](./260416/)
 - [260417. 몬스터 비전투 루프와 순찰 디버깅](./260417/)
+- [260420. 몬스터 사망, 랙돌, 아이템 박스 드롭](./260420/)
 
 ## 읽는 방식
 
@@ -40,6 +41,7 @@ title: UE Lecture Books
 - `260415`: SpawnPoint, PatrolPath, Behavior Tree 등록, Perception, Move To
 - `260416`: MonsterAnimInstance, MonsterTrace Task, MonsterAttack Task, AnimNotify 기반 전투 루프
 - `260417`: Monster Wait Task, Monster Patrol Task, 엔진/에디터 버그 수정
+- `260420`: Monster Death, AnimNotify_Death, Ragdoll, Physics Asset, ItemBox, Drop Animation, Overlap Pickup
 
 ## 저장소 구조
 
@@ -55,4 +57,5 @@ title: UE Lecture Books
 - `260415/index.md`: 2026-04-15 강의 교재
 - `260416/index.md`: 2026-04-16 강의 교재
 - `260417/index.md`: 2026-04-17 강의 교재
-- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260420/index.md`: 2026-04-20 강의 교재
+- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처
