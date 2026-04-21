@@ -24,6 +24,7 @@ title: 260420 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를
 - 원본 MP4에서 다시 추출한 대표 장면 캡처
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 C++ 소스
 - `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility`의 덤프 결과
+- Epic Developer Community의 언리얼 공식 문서
 
 ## 학습 목표
 
@@ -33,6 +34,7 @@ title: 260420 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를
 - `SetAllBodiesBelowSimulatePhysics`, `WakeAllRigidBodies`, `bBlendPhysics`가 랙돌 전환에서 어떤 역할을 하는지 이해할 수 있다.
 - `AItemBox`가 `Box Collision + Static Mesh + OnComponentBeginOverlap` 구조를 가지는 이유를 설명할 수 있다.
 - `StartDropAnimation`, `FindGroundLocation`, `Lerp + Sin`, `EaseOutCubic`, 회전 보정이 아이템 박스 드롭 연출을 어떻게 만드는지 정리할 수 있다.
+- `Animation Notifies`, `Physics Asset`, `Collision/Overlap` 공식 문서가 왜 `260420`와 직접 연결되는지 설명할 수 있다.
 - `TakeDamage() -> AnimNotify_Death() -> Death() -> SetLifeSpan() -> EndPlay() -> AItemBox::BeginPlay() -> Tick() -> ItemOverlap()` 흐름을 코드 기준으로 설명할 수 있다.
 - 현재 구현에서 `ItemBox`가 `EndPlay()`에서 생성되고, 아직 드롭 확률/플레이어 필터링/보상 지급 데이터는 붙지 않았다는 점을 설명할 수 있다.
 
@@ -42,6 +44,8 @@ title: 260420 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를
 2. 사망 후처리 시점은 애니메이션 노티파이로 맞추고, 그 순간 랙돌 물리 전환을 걸어 더 자연스러운 무너짐을 만든다.
 3. 몬스터가 정리되는 시점에는 `ItemBox`를 생성해 보상 오브젝트를 월드에 남긴다.
 4. 생성된 `ItemBox`는 그냥 땅에 박히듯 나타나는 대신, 위로 살짝 튀어올랐다가 바닥으로 내려오고 회전하는 드롭 애니메이션을 가진다.
+5. 언리얼 공식 문서를 통해 `Anim Notify`, `Physics Asset`, 충돌/오버랩, 트리거 개념이 엔진 표준 용어로 어떻게 정리되는지 확인한다.
+6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `MonsterBase`, `MonsterAnimInstance`, `ItemBox` 안에서 어떻게 하나의 사망 이후 파이프라인으로 이어지는지 확인한다.
 
 ---
 
@@ -65,10 +69,13 @@ title: 260420 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를
 ```cpp
 if (mHP <= 0.f)
 {
+    // HP는 0 아래로 내려가지 않게 고정한다.
     mHP = 0.f;
 
+    // 애니메이션 상태를 사망으로 전환한다.
     mAnimInst->SetAnim(EMonsterNormalAnim::Death);
 
+    // AI는 더 이상 새 행동을 하지 못하게 중단한다.
     AMonsterController* MonsterController = GetController<AMonsterController>();
     if (IsValid(MonsterController))
     {
@@ -76,6 +83,7 @@ if (mHP <= 0.f)
         MonsterController->BrainComponent->Cleanup();
     }
 
+    // 살아 있을 때 쓰던 캡슐 충돌과 이동을 끈다.
     mBody->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     mMovement->StopMovementImmediately();
     mMovement->Deactivate();
@@ -106,6 +114,7 @@ if (mHP <= 0.f)
 현재 소스에서도 시작점은 이미 잡혀 있다.
 
 ```cpp
+// 시체 캡슐이 내비게이션 계산에 끼어들지 않게 한다.
 mBody->SetCanEverAffectNavigation(false);
 ```
 
@@ -124,6 +133,7 @@ Death 애니메이션 재생 도중 특정 시점에 후처리를 넣기 위해 
 ```cpp
 void UMonsterAnimInstance::AnimNotify_Death()
 {
+    // 사망 애니메이션의 특정 프레임에서 본체 Death()를 호출한다.
     TObjectPtr<AMonsterBase> Monster = Cast<AMonsterBase>(TryGetPawnOwner());
     Monster->Death();
 }
@@ -185,18 +195,22 @@ void UMonsterAnimInstance::AnimNotify_Death()
 ```cpp
 void AMonsterBase::Death()
 {
+    // 이제 메시가 충돌과 물리를 맡아야 하므로 랙돌 프로파일로 바꾼다.
     mMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     mMesh->SetCollisionProfileName(TEXT("Ragdoll"));
     mMesh->SetSimulatePhysics(true);
 
+    // 남아 있던 속도는 0으로 비워 튀는 현상을 줄인다.
     mMesh->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
     mMesh->SetAllPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
 
+    // pelvis 아래 본부터만 물리 시뮬레이션을 켠다.
     mMesh->SetAllBodiesSimulatePhysics(false);
     mMesh->SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true);
     mMesh->WakeAllRigidBodies();
     mMesh->bBlendPhysics = true;
 
+    // 잠시 뒤 액터가 정리되면서 EndPlay가 호출된다.
     SetLifeSpan(3.f);
 }
 ```
@@ -247,14 +261,18 @@ void AMonsterBase::Death()
 현재 프로젝트의 `AItemBox`는 정확히 그런 구조를 가진다.
 
 ```cpp
+// 실제 획득 판정 박스
 mBody = CreateDefaultSubobject<UBoxComponent>(TEXT("Body"));
+// 눈에 보이는 상자 메시
 mMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 
 SetRootComponent(mBody);
 mMesh->SetupAttachment(mBody);
 
+// 메시 자체 충돌은 끄고, 판정은 BoxComponent가 맡는다.
 mMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 mBody->SetCollisionProfileName(TEXT("ItemBox"));
+// 플레이어가 겹치면 ItemOverlap이 호출된다.
 mBody->OnComponentBeginOverlap.AddDynamic(this, &AItemBox::ItemOverlap);
 ```
 
@@ -278,10 +296,12 @@ void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
 
+    // 죽은 자리에도 상자가 생성되도록 스폰 파라미터를 준비한다.
     FActorSpawnParameters param;
     param.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+    // 현재 위치에 ItemBox를 스폰한다.
     AItemBox* ItemBox = GetWorld()->SpawnActor<AItemBox>(
         GetActorLocation(), GetActorRotation(), param);
 }
@@ -328,6 +348,7 @@ void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AItemBox::BeginPlay()
 {
     Super::BeginPlay();
+    // 스폰되자마자 낙하 연출을 시작한다.
     StartDropAnimation();
 }
 ```
@@ -344,6 +365,7 @@ void AItemBox::BeginPlay()
 현재 구현도 정확히 그렇게 되어 있다.
 
 ```cpp
+// 상자 바로 아래 바닥을 찾기 위한 라인트레이스 시작/끝점
 FVector TraceStart = GetActorLocation() + FVector(0.0, 0.0, 50.0);
 FVector TraceEnd = TraceStart - FVector(0.0, 0.0, 500.0);
 
@@ -354,6 +376,7 @@ bool Collision = GetWorld()->LineTraceSingleByChannel(
 그리고 땅을 찾으면 상자의 절반 높이만큼 올려 `mGroundLocation`을 만든다.
 
 ```cpp
+// 실제 바닥 충돌 지점에 상자 절반 높이를 더해 바닥에 박히지 않게 만든다.
 mGroundLocation = Hit.ImpactPoint;
 mGroundLocation.Z += mBody->GetScaledBoxExtent().Z;
 ```
@@ -369,10 +392,14 @@ mGroundLocation.Z += mBody->GetScaledBoxExtent().Z;
 `Tick()` 안에서 드롭 연출이 실제로 진행된다.
 
 ```cpp
+// 0~1 진행률
 float Alpha = FMath::Clamp(mAnimTime / mDropDuration, 0.f, 1.f);
+// 끝으로 갈수록 감속하는 이동 비율
 float MoveAlpha = EaseOutCubic(Alpha);
 
+// 시작점과 바닥 사이를 보간하고
 FVector DropLocation = FMath::Lerp(mStartLocation, mGroundLocation, MoveAlpha);
+// 위로 한 번 솟았다가 내려오는 높이감을 더한다.
 DropLocation.Z += FMath::Sin(Alpha * PI) * mJumpHeight;
 
 SetActorLocation(DropLocation);
@@ -394,12 +421,15 @@ SetActorLocation(DropLocation);
 현재 헤더를 보면 이 철학이 반영돼 있다.
 
 ```cpp
+// 드롭 전체 길이
 UPROPERTY(EditAnywhere, BlueprintReadOnly)
 float mDropDuration = 1.f;
 
+// 감속 곡선 강도
 UPROPERTY(EditAnywhere, BlueprintReadOnly)
 float mDropPow = 3.f;
 
+// 위로 튀어 오르는 높이
 float mJumpHeight = 80.f;
 ```
 
@@ -415,6 +445,7 @@ float mJumpHeight = 80.f;
 현재 구현도 단순하고 효과적이다.
 
 ```cpp
+// 드롭 중에는 계속 회전시켜 시선을 끈다.
 FRotator Rot = GetActorRotation();
 Rot += mSpinSpeed * DeltaTime;
 SetActorRotation(Rot);
@@ -425,6 +456,7 @@ SetActorRotation(Rot);
 ```cpp
 if (Alpha >= 1.f)
 {
+    // 연출이 끝나면 드롭 상태를 끄고 정확한 바닥 위치/회전으로 정리한다.
     mDrop = false;
     SetActorLocation(mGroundLocation);
     SetActorRotation(FRotator::ZeroRotator);
@@ -457,6 +489,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& SweepResult)
 {
+    // 현재 구현은 오버랩이 일어나면 바로 상자를 제거한다.
     Destroy();
 }
 ```
@@ -481,9 +514,84 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 
 ---
 
-## 제4장. 현재 프로젝트 C++ 코드로 다시 읽는 260420 핵심 구조
+## 제4장. 언리얼 공식 문서로 다시 읽는 260420 핵심 구조
 
-### 4.1 왜 260420은 "죽는 모션 추가"가 아니라 "사망 이후 파이프라인 완성" 강의인가
+### 4.1 왜 260420부터 공식 문서를 같이 보는가
+
+`260420`은 몬스터가 죽은 뒤 어떤 일이 벌어지는지를 한 번에 다루는 날이다.
+입문자 입장에서는 `AnimNotify_Death`, `Ragdoll`, `Physics Asset`, `ItemBox`, `Overlap Pickup`이 각각 따로 노는 기능처럼 보이지만, 공식 문서 기준으로 보면 이들은 `Animation Notify`, `Physics Asset`, `Collision/Overlap`, `Trigger` 층으로 정리된다.
+
+이번 보강에서는 특히 아래 공식 문서를 기준점으로 삼는다.
+
+- [Animation Notifies in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-notifies-in-unreal-engine?application_version=5.6)
+- [Creating a New Physics Asset in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/creating-a-new-physics-asset-in-unreal-engine)
+- [Editing the Physics Asset of a Physics Body in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/editing-the-physics-asset-of-a-physics-body-in-unreal-engine)
+- [Collision in Unreal Engine - Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/collision-in-unreal-engine---overview)
+- [Trigger Volume Actors in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/trigger-volume-actors-in-unreal-engine?application_version=5.6)
+
+즉 이 장의 목적은 사망 후처리 구조를 더 복잡하게 만드는 것이 아니라, `죽음 -> 물리 전환 -> 보상 생성 -> 오버랩 획득` 흐름이 공식 문서 기준으로 어떤 시스템 층에 해당하는지 보여 주는 데 있다.
+
+### 4.2 공식 문서의 `Animation Notifies`는 강의의 `AnimNotify_Death()`를 "후처리 시간표" 개념으로 정리해 준다
+
+강의 1장의 핵심은 몬스터가 HP 0이 되는 순간 바로 모든 후처리를 끝내지 않는다는 점이다.
+공식 문서의 `Animation Notifies`도 같은 관점을 준다.
+
+즉 노티파이는 단순 이펙트 재생용이 아니라, 애니메이션 시간축 안에서 "이 프레임에 후속 시스템을 열어라"라고 알려 주는 장치다.
+그래서 `AnimNotify_Death()`는 아래 일을 자연스럽게 연결한다.
+
+- 사망 애니메이션은 먼저 재생된다
+- 적절한 프레임에 후반 처리 시점이 열린다
+- 그때 랙돌이나 물리 전환을 건다
+
+즉 `260420`의 노티파이는 공격 타이밍용이 아니라, 사망 후처리 타이밍용 시간표라고 보면 된다.
+
+### 4.3 공식 문서의 `Physics Asset`는 강의의 `Ragdoll`과 `ItemBox` 연출 사이에서 "죽은 몸이 물리가 되려면 무엇이 필요한가"를 설명해 준다
+
+강의 2장의 핵심은 랙돌이 단순 체크박스 하나가 아니라는 점이다.
+공식 문서의 `Creating a New Physics Asset`와 `Editing the Physics Asset of a Physics Body`도 같은 사실을 강조한다.
+
+즉 스켈레탈 메시가 죽은 뒤 물리 오브젝트처럼 무너지려면, 본마다 어떤 물리 바디가 있고 어떤 충돌 설정을 쓰는지가 먼저 준비돼 있어야 한다.
+그래서 강의에서 `Physics Asset`을 따로 다루는 것은 선택 사항이 아니라 랙돌의 전제 조건에 해당한다.
+
+이 관점으로 보면 `SetAllBodiesBelowSimulatePhysics`, `WakeAllRigidBodies`, `bBlendPhysics`도 결국 "준비된 Physics Asset을 런타임 물리 시뮬레이션으로 넘기는 단계"로 읽을 수 있다.
+
+### 4.4 공식 문서의 `Collision Overview`와 `Trigger Volume Actors`는 강의의 `ItemOverlap()`을 더 단순하게 해석하게 만든다
+
+강의 3장의 후반부는 생성된 `ItemBox`를 플레이어가 겹치면 획득하는 구조를 붙인다.
+공식 문서 기준으로 보면 이것도 새 기능이 아니라, 이미 배운 충돌/트리거 문법의 연장선이다.
+
+- `Collision Overview`: `Block / Overlap / Ignore` 중 어떤 반응을 쓸지 정한다
+- `Trigger Volume Actors`: 통과는 허용하되 이벤트만 받는 구조가 왜 유용한지 설명한다
+
+즉 `ItemBox`의 획득 판정은 특별한 보상 시스템이 아니라, "보상 오브젝트도 결국 오버랩 기반 이벤트 액터다"라는 사실을 보여 주는 예제라고 이해할 수 있다.
+
+### 4.5 260420 공식 문서 추천 읽기 순서
+
+이번 날짜는 아래 순서로 공식 문서를 읽으면 가장 자연스럽다.
+
+1. [Animation Notifies in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-notifies-in-unreal-engine?application_version=5.6)
+2. [Creating a New Physics Asset in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/creating-a-new-physics-asset-in-unreal-engine)
+3. [Editing the Physics Asset of a Physics Body in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/editing-the-physics-asset-of-a-physics-body-in-unreal-engine)
+4. [Collision in Unreal Engine - Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/collision-in-unreal-engine---overview)
+5. [Trigger Volume Actors in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/trigger-volume-actors-in-unreal-engine?application_version=5.6)
+
+이 순서가 좋은 이유는 먼저 `사망 후처리 시점`을 노티파이로 잡고, 그 다음 `죽은 몸을 어떤 물리로 바꿀 것인가`를 Physics Asset으로 읽고, 마지막에 `드롭 오브젝트를 어떻게 획득 판정으로 연결할 것인가`를 충돌/트리거 문서로 내려갈 수 있기 때문이다.
+
+### 4.6 장 정리
+
+공식 문서 기준으로 다시 보면 `260420`은 아래 다섯 가지를 배우는 날이다.
+
+1. 사망 후처리는 애니메이션 시간표와 함께 움직여야 한다.
+2. 랙돌은 Physics Asset이 있어야 성립한다.
+3. 살아 있을 때의 전투 충돌과 죽은 뒤의 물리 충돌은 분리해야 한다.
+4. 보상 오브젝트도 결국 오버랩 기반 이벤트 액터다.
+5. 그래서 `260420`은 죽는 모션 하나를 추가하는 날이 아니라, 사망 이후 파이프라인을 완성하는 날이다.
+
+---
+
+## 제5장. 현재 프로젝트 C++ 코드로 다시 읽는 260420 핵심 구조
+
+### 5.1 왜 260420은 "죽는 모션 추가"가 아니라 "사망 이후 파이프라인 완성" 강의인가
 
 `260420`을 겉으로만 보면 몬스터가 죽을 때 랙돌이 되고 상자가 떨어지는 날처럼 보인다.
 하지만 현재 프로젝트 C++를 기준으로 읽으면, 이 날짜의 핵심은 기능 세 개를 따로 붙이는 것이 아니라,
@@ -505,7 +613,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 아래 코드는 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 구현에서 핵심만 추려 온 뒤,
 처음 보는 사람도 읽을 수 있게 설명용 주석을 붙인 축약판이다.
 
-### 4.2 `AMonsterBase::TakeDamage()`: 사망 직후 가장 먼저 AI와 전투용 몸체를 내린다
+### 5.2 `AMonsterBase::TakeDamage()`: 사망 직후 가장 먼저 AI와 전투용 몸체를 내린다
 
 현재 코드에서 “죽었다”를 가장 먼저 판단하는 곳은 `Destroy()`가 아니라 `TakeDamage()`다.
 그리고 여기서 하는 일은 생각보다 많다.
@@ -561,7 +669,7 @@ float AMonsterBase::TakeDamage(float DamageAmount, const FDamageEvent& DamageEve
 - AI 사고를 멈춘다.
 - 살아 있을 때 쓰던 캡슐 충돌과 이동을 끈다.
 
-### 4.3 `AnimNotify_Death()`: 사망 후반 처리 시점을 애니메이션 프레임과 맞춘다
+### 5.3 `AnimNotify_Death()`: 사망 후반 처리 시점을 애니메이션 프레임과 맞춘다
 
 `TakeDamage()`에서 바로 랙돌로 넘기지 않고, 한 번 더 `AnimNotify_Death()`를 거치는 구조도 중요하다.
 현재 구현은 매우 얇지만, 바로 그 얇음 때문에 역할이 선명하다.
@@ -584,7 +692,7 @@ void UMonsterAnimInstance::AnimNotify_Death()
 즉 사망 시스템을 `즉시 판정`과 `후반 처리 타이밍`으로 나눠서 읽어야 한다.
 그래야 Death 애니메이션 길이나 캐릭터별 사망 모션이 달라져도, 후속 시스템은 같은 접점에서 안정적으로 실행할 수 있다.
 
-### 4.4 `AMonsterBase::Death()`: 살아 있던 메시를 랙돌 물리 오브젝트로 바꾼다
+### 5.4 `AMonsterBase::Death()`: 살아 있던 메시를 랙돌 물리 오브젝트로 바꾼다
 
 실제 랙돌 전환은 `AMonsterBase::Death()`에 들어 있다.
 여기서 중요한 포인트는 “메시에 물리를 켠다” 한 줄이 아니라, 충돌/속도/시뮬레이션 범위/웨이크/블렌딩을 묶어서 처리한다는 점이다.
@@ -626,7 +734,7 @@ void AMonsterBase::Death()
 즉 현재 구현은 `mBody`를 끄고 `mMesh`를 랙돌로 켜는 2단계 전환 구조다.
 그래서 전투 판정용 충돌과 사망 후 물리용 충돌이 섞이지 않는다.
 
-### 4.5 `EndPlay()`: 현재 구현에서 드롭 생성 책임은 몬스터 본체가 직접 가진다
+### 5.5 `EndPlay()`: 현재 구현에서 드롭 생성 책임은 몬스터 본체가 직접 가진다
 
 현재 프로젝트에서 아이템 박스 생성은 별도 드롭 매니저가 아니라 `AMonsterBase::EndPlay()`가 직접 맡는다.
 
@@ -635,6 +743,7 @@ void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
 
+    // 사망 후 정리 시점에 아이템 상자를 스폰한다.
     FActorSpawnParameters param;
     param.SpawnCollisionHandlingOverride =
         ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -659,7 +768,7 @@ void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 즉 지금은 “무조건 상자를 떨군다”는 학습용 최소 구조에 가깝고, 이후엔 조건 분기가 붙을 여지가 크다.
 
-### 4.6 `AItemBox` 생성자와 `BeginPlay()`: 보상 오브젝트가 스스로 드롭 연출을 책임진다
+### 5.6 `AItemBox` 생성자와 `BeginPlay()`: 보상 오브젝트가 스스로 드롭 연출을 책임진다
 
 `AItemBox`가 좋은 점은 몬스터 쪽이 드롭 연출 세부를 몰라도 된다는 것이다.
 몬스터는 “언제 생성할지”만 알고, 상자는 “어떻게 등장할지”를 스스로 처리한다.
@@ -703,7 +812,7 @@ void AItemBox::BeginPlay()
 - `MonsterBase`: 상자를 생성할지 결정
 - `ItemBox`: 생성된 뒤 어떻게 보일지, 언제 획득될지 결정
 
-### 4.7 `StartDropAnimation()`과 `FindGroundLocation()`: 착지점을 먼저 찾고 그 사이를 연출한다
+### 5.7 `StartDropAnimation()`과 `FindGroundLocation()`: 착지점을 먼저 찾고 그 사이를 연출한다
 
 현재 드롭 시스템은 물리로 상자를 떨어뜨리는 대신, 먼저 시작점과 착지점을 정한 뒤 그 사이를 보간하는 방식이다.
 이 방식이 학습용으로 특히 좋은 이유는 결과가 예측 가능하고 튜닝도 쉽기 때문이다.
@@ -749,7 +858,7 @@ bool AItemBox::FindGroundLocation()
 즉 `ItemBox`는 “떨어지는 오브젝트”처럼 보이지만, 실제로는 먼저 착지 지점을 계산한 뒤 그 사이를 잘 연출하는 구조다.
 이 덕분에 맵 경사나 높낮이가 조금 달라도 안정적으로 보인다.
 
-### 4.8 `Tick()`과 `EaseOutCubic()`: 시간 기반 보간과 회전으로 드롭 감각을 만든다
+### 5.8 `Tick()`과 `EaseOutCubic()`: 시간 기반 보간과 회전으로 드롭 감각을 만든다
 
 실제 드롭 연출은 `Tick()`에서 매 프레임 갱신된다.
 이 코드가 좋은 이유는 수식 하나하나의 역할이 뚜렷하기 때문이다.
@@ -805,7 +914,7 @@ float AItemBox::EaseOutCubic(float Alpha) const
 
 즉 현재 `ItemBox` 드롭은 물리 시뮬레이션이 아니라, 시간 기반 연출 파라미터 묶음으로 설계된 시스템이다.
 
-### 4.9 `ItemOverlap()`: 현재 구현은 최소형 획득 루프이고, 이후 확장 지점이 명확하다
+### 5.9 `ItemOverlap()`: 현재 구현은 최소형 획득 루프이고, 이후 확장 지점이 명확하다
 
 현재 획득 로직은 매우 얇다.
 
@@ -814,6 +923,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& SweepResult)
 {
+    // 현재 구현은 누가 먹었는지 구분하지 않고 바로 제거한다.
     Destroy();
 }
 ```
@@ -829,7 +939,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 하지만 구조상 확장 포인트는 아주 분명하다.
 즉 `ItemOverlap()`은 완성형 시스템이 아니라, 이후 경제 시스템이나 보상 시스템을 꽂을 준비가 된 접점이라고 보면 된다.
 
-### 4.10 장 정리
+### 5.10 장 정리
 
 현재 C++ 코드로 읽으면 `260420`의 사망 후 파이프라인은 다음 한 문장으로 요약할 수 있다.
 
@@ -851,7 +961,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 
 `260420`은 몬스터 전투 루프의 마지막 퍼즐을 맞추는 날이다.
 사망 애니메이션과 AI 종료를 연결하고, 애니메이션 노티파이 시점에서 랙돌로 전환하고, 일정 시간이 지나면 `ItemBox`가 생성되며, 그 상자는 다시 짧은 드롭 연출과 오버랩 획득 루프를 가진다.
-현재 저장소 기준으로 이 파이프라인은 다음처럼 읽는 것이 가장 정확하다.
+공식 문서 기준으로는 이 흐름이 `Animation Notify + Physics Asset + Collision/Overlap` 조합으로 설명되고, 현재 저장소 기준으로 이 파이프라인은 다음처럼 읽는 것이 가장 정확하다.
 
 `TakeDamage -> Death 애니메이션 -> AnimNotify_Death -> Death() -> SetLifeSpan(3.f) -> EndPlay() -> ItemBox 생성 -> BeginPlay() -> Drop Animation -> Overlap 시 Destroy()`
 
@@ -874,6 +984,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 - `ItemBox`가 왜 별도 액터여야 하는가?
 - `Lerp + Sin + EaseOutCubic` 조합이 어떤 드롭 곡선을 만드는지 설명할 수 있는가?
 - 오버랩 획득 구조를 이후 아이템 지급 시스템으로 어떻게 확장할지 말할 수 있는가?
+- `Animation Notifies`, `Physics Asset`, `Collision/Overlap` 문서가 어느 파트를 보강하는지 연결할 수 있는가?
 - 현재 `EndPlay()`의 무조건 드롭, `ItemOverlap()`의 무조건 `Destroy()`가 어떤 한계를 가지는지 설명할 수 있는가?
 - `TakeDamage() -> AnimNotify_Death() -> Death() -> EndPlay() -> AItemBox::BeginPlay() -> Tick()` 순서를 코드 기준으로 설명할 수 있는가?
 
@@ -882,7 +993,7 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 1. 몬스터 사망 직후 바로 `Destroy()`하지 않고, Death 애니메이션과 랙돌, LifeSpan을 거치는 구조는 어떤 장점을 주는가?
 2. 사망 후 드롭 오브젝트를 `MonsterBase` 내부에서 직접 처리하는 방식과, 별도 보상 시스템이 이벤트를 받아 생성하는 방식은 어떤 차이를 가질까?
 3. 현재 `EndPlay()`가 종료 이유를 검사하지 않고 `ItemBox`를 생성하는 구조는 어떤 상황에서 문제를 만들 수 있을까?
-4. 현재 `ItemOverlap()`이 단순 `Destroy()`에 머물러 있는 구조를 실제 아이템 지급 시스템으로 발전시키려면 어떤 데이터와 판정이 추가되어야 할까?
+4. 공식 문서의 `Anim Notify / Physics Asset / Collision` 구도를 먼저 알고 강의를 읽으면 무엇이 더 덜 헷갈릴까?
 5. 랙돌 전환 책임을 `AnimNotify_Death()`가 쥐는 현재 구조는 Death 애니메이션 길이가 다른 몬스터가 늘어날수록 어떤 장점을 주는가?
 
 ## 권장 과제
@@ -890,5 +1001,5 @@ void AItemBox::ItemOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 1. `AItemBox`에 플레이어 여부 확인 로직을 추가한다고 가정하고, 어떤 클래스나 태그, 팀 ID를 기준으로 판정할지 스스로 설계해 본다.
 2. `mDropDuration`, `mDropPow`, `mJumpHeight`, `mSpinSpeed` 값을 조합해 “묵직한 상자”와 “가벼운 보석” 두 가지 드롭 느낌을 어떻게 다르게 만들지 정리해 본다.
 3. `MonsterBase::EndPlay()`가 현재는 무조건 `ItemBox`를 생성하는 구조인데, `EEndPlayReason`, 사망 플래그, 몬스터 종류, 드롭 확률을 기준으로 어떤 분기 구조를 두면 좋을지 적어 본다.
-4. `ItemOverlap()`에 플레이어 필터링과 아이템 지급 로직을 붙인다고 가정하고, 최소한 어떤 순서로 검사해야 안전할지 절차를 정리해 본다.
+4. 공식 문서의 `Animation Notifies`, `Physics Asset`, `Collision Overview`, `Trigger Volume Actors`를 읽고 강의 구조와 어떤 용어가 대응되는지 표로 정리해 본다.
 5. `MonsterBase.cpp`, `MonsterAnimInstance.cpp`, `ItemBox.cpp`를 기준으로 `사망 판정 -> 노티파이 -> 랙돌 -> 수명 종료 -> 상자 생성 -> 드롭 연출 -> 획득` 시퀀스 다이어그램을 그려 본다.

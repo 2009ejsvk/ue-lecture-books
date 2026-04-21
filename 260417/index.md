@@ -22,6 +22,7 @@ title: 260417 비전투 대기와 순찰을 반복하는 AI를 만들고 순찰 
 - 원본 MP4에서 다시 추출한 고해상도 장면 캡처
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 소스
 - `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility`의 덤프 결과
+- Epic Developer Community의 언리얼 공식 문서
 
 ## 학습 목표
 
@@ -30,6 +31,7 @@ title: 260417 비전투 대기와 순찰을 반복하는 AI를 만들고 순찰 
 - `BTTask_Patrol`이 왜 곡선 추종이 아니라 점 기반 이동을 택했는지 설명할 수 있다.
 - `mPatrolIndex = 1`, `GetPatrolEnable()`, `NextPatrol()`이 순찰 루프를 어떻게 만드는지 말할 수 있다.
 - `WaitFinish()`, `OnTaskFinished()`, `SpawnMonster()`, `SetPatrolPoints()`가 비전투 루프를 어떤 순서로 이어 주는지 코드 기준으로 설명할 수 있다.
+- `Behavior Tree`, `Basic Navigation`, `AI Perception`, `Visual Logger` 공식 문서가 왜 `260417`과 직접 연결되는지 설명할 수 있다.
 - 현재 코드 기준으로 `WaitTime`, `Target`, `PathStatus`, 거리 판정, 순찰 인덱스를 어떤 순서로 디버깅할지 설명할 수 있다.
 
 ## 강의 흐름 요약
@@ -38,6 +40,8 @@ title: 260417 비전투 대기와 순찰을 반복하는 AI를 만들고 순찰 
 2. 순찰은 스플라인을 그대로 따르기보다 점을 기준으로 이동하는 방식으로 구현한다.
 3. 첫 점은 스폰 위치와 겹치므로 실제 이동은 `1번 인덱스`부터 시작하는 편이 자연스럽다.
 4. 버그가 생기면 Blackboard 값, `GetMoveStatus()`, 거리 판정, `mPatrolIndex`, Behavior Tree 브랜치 흐름을 먼저 분리해서 본다.
+5. 언리얼 공식 문서를 통해 `Behavior Tree`, `Navigation`, `Perception`, 디버깅 도구가 엔진 표준 용어로 어떻게 정리되는지 확인한다.
+6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `BTTask_MonsterWait`, `BTTask_Patrol`, `MonsterSpawnPoint`, `MonsterBase` 안에서 어떻게 하나의 비전투 루프로 이어지는지 확인한다.
 
 ---
 
@@ -85,7 +89,9 @@ struct FWaitTimer
 {
     GENERATED_BODY()
 
+    // 이 Wait 태스크가 잡아 둔 실제 타이머 핸들
     FTimerHandle Timer;
+    // 대기 완료 여부만 따로 기록하는 플래그
     bool Complete = false;
 };
 ```
@@ -109,18 +115,23 @@ struct FWaitTimer
 5. 타이머를 걸고 `InProgress`를 반환한다.
 
 ```cpp
+// 이미 타겟이 있으면 굳이 대기하지 않고 전투 브랜치로 넘긴다.
 AActor* Target = Cast<AActor>(BlackboardComp->GetValueAsObject(TEXT("Target")));
 
 if (Target)
     return EBTNodeResult::Succeeded;
 
+// 비전투 상태이므로 애니메이션을 Idle로 맞춘다.
 Monster->ChangeAnim(EMonsterNormalAnim::Idle);
 
+// 블랙보드에 저장된 기다릴 시간을 읽는다.
 float WaitTime = BlackboardComp->GetValueAsFloat(TEXT("WaitTime"));
 
+// NodeMemory를 FWaitTimer 구조체처럼 사용한다.
 FWaitTimer* Timer = (FWaitTimer*)NodeMemory;
 Timer->Complete = false;
 
+// WaitTime 뒤에 WaitFinish가 호출되도록 타이머를 건다.
 OwnerComp.GetWorld()->GetTimerManager().SetTimer(
     Timer->Timer,
     FTimerDelegate::CreateUObject(this, &UBTTask_MonsterWait::WaitFinish, NodeMemory),
@@ -203,21 +214,26 @@ return EBTNodeResult::InProgress;
 소스도 이를 분명하게 반영한다.
 
 ```cpp
+// 실제 순찰 좌표 배열
 TArray<FVector> mPatrolPoints;
+// 현재 순찰 중인 목표 점 인덱스
 int32 mPatrolIndex = 1;
 
 bool GetPatrolEnable() const
 {
+    // 점이 2개 이상 있어야 왕복이든 순환이든 순찰이 가능하다.
     return mPatrolPoints.Num() > 1;
 }
 
 FVector GetPatrolPoint() const
 {
+    // 지금 향해야 할 점 하나를 돌려준다.
     return mPatrolPoints[mPatrolIndex];
 }
 
 void NextPatrol()
 {
+    // 다음 점으로 인덱스를 넘긴다.
     mPatrolIndex = (mPatrolIndex + 1) % mPatrolPoints.Num();
 }
 ```
@@ -254,15 +270,18 @@ Trace는 Target을 추적하는 태스크이고, Patrol은 Target이 없을 때 
 그리고 Patrol 포인트는 액터가 아니라 단순한 `FVector`이므로, 몬스터 위치 쪽만 캡슐 높이를 보정해 바닥 기준으로 거리를 맞춘다.
 
 ```cpp
+// 현재 목표 순찰점과 몬스터 위치를 비교한다.
 FVector TargetLocation, MonsterLocation;
 
 TargetLocation = Monster->GetPatrolPoint();
 MonsterLocation = Monster->GetActorLocation();
 
+// 캡슐 절반 높이를 빼서 바닥 기준 거리처럼 계산한다.
 UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(Monster->GetRootComponent());
 if (Capsule)
     MonsterLocation.Z -= Capsule->GetScaledCapsuleHalfHeight();
 
+// 거의 도착했다고 보면 이번 태스크를 끝낸다.
 float Distance = FVector::Dist(MonsterLocation, TargetLocation);
 
 if (Distance <= 5.f)
@@ -373,9 +392,70 @@ Wait 태스크와 붙이면 `대기 -> 이동 -> 대기 -> 이동`의 비전투 
 
 ---
 
-## 제4장. 현재 프로젝트 C++ 코드로 다시 읽는 260417 핵심 구조
+## 제4장. 언리얼 공식 문서로 다시 읽는 260417 핵심 구조
 
-### 4.1 왜 260417은 "가만히 있는 AI"가 아니라 "비전투 루프를 안전하게 반복하는 AI" 강의인가
+### 4.1 왜 260417부터 공식 문서를 같이 보는가
+
+`260417`은 기능을 새로 많이 추가하는 날이라기보다, 이미 만들어 둔 비전투 루프를 안정적으로 돌게 만드는 날이다.
+그래서 이 날짜는 오히려 공식 문서의 `Behavior Tree`, `Navigation`, `AI Perception`, `Visual Logger` 같은 디버깅/운용 문서와 함께 볼 때 더 잘 읽힌다.
+
+이번 보강에서는 특히 아래 공식 문서를 기준점으로 삼는다.
+
+- [Behavior Tree in Unreal Engine - User Guide](https://dev.epicgames.com/documentation/en-us/unreal-engine/behavior-tree-in-unreal-engine---user-guide?application_version=5.6)
+- [Basic Navigation in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/basic-navigation-in-unreal-engine)
+- [AI Perception in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/ai-perception-in-unreal-engine)
+- [Visual Logger in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/visual-logger-in-unreal-engine)
+
+즉 이 장의 목적은 `MonsterWait`, `MonsterPatrol`을 더 복잡하게 설명하는 것이 아니라, 비전투 루프와 디버깅 포인트가 언리얼 공식 문서 기준으로 어떤 AI 운용 문법에 해당하는지 보여 주는 데 있다.
+
+### 4.2 공식 문서의 `Behavior Tree`와 `Navigation`은 강의의 `Wait -> Patrol` 루프를 더 명확하게 만든다
+
+강의 1장과 2장의 핵심은 몬스터가 아무것도 안 하는 것처럼 보여도, 사실은 `대기 -> 순찰 -> 다시 대기`를 반복하는 행동 브랜치 안에 있다는 점이다.
+공식 문서 기준으로 보면 이 루프는 아래처럼 읽을 수 있다.
+
+- `Behavior Tree`: 지금 어떤 비전투 브랜치를 타고 있는가
+- `Navigation`: 현재 순찰점까지 실제로 이동 가능한가
+
+즉 `Wait`와 `Patrol`은 단순한 보조 기능이 아니라, 플레이어가 감지되지 않았을 때 AI가 시간을 보내는 기본 행동 트리라고 이해할 수 있다.
+
+### 4.3 공식 문서의 `AI Perception`과 `Visual Logger`는 강의의 디버깅 관점을 더 실전적으로 정리해 준다
+
+강의 3장은 왜 마지막에 디버깅 정리를 넣는지 설명한다.
+비전투 루프는 "코드 한 줄이 틀려서" 깨지기보다, `Target`, `WaitTime`, `PathStatus`, `PatrolIndex`, 감지 상태가 서로 엇갈리면서 깨지는 경우가 많기 때문이다.
+
+공식 문서의 `AI Perception`과 `Visual Logger`도 비슷한 관점을 준다.
+
+- `AI Perception`: 감지 정보가 실제로 들어오고 있는가
+- `Visual Logger`: 어떤 상태와 이벤트가 언제 기록되는가
+
+즉 `260417`의 핵심은 새로운 기술 이름을 많이 배우는 것이 아니라, AI 문제를 `Blackboard -> 태스크 종료 이유 -> 이동 상태 -> 배열 데이터` 순으로 분리해서 좁혀 가는 습관을 만드는 데 있다.
+
+### 4.4 260417 공식 문서 추천 읽기 순서
+
+이번 날짜는 아래 순서로 공식 문서를 읽으면 가장 자연스럽다.
+
+1. [Behavior Tree in Unreal Engine - User Guide](https://dev.epicgames.com/documentation/en-us/unreal-engine/behavior-tree-in-unreal-engine---user-guide?application_version=5.6)
+2. [Basic Navigation in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/basic-navigation-in-unreal-engine)
+3. [AI Perception in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/ai-perception-in-unreal-engine)
+4. [Visual Logger in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/visual-logger-in-unreal-engine)
+
+이 순서가 좋은 이유는 먼저 `브랜치와 이동`을 잡고, 그 다음 `감지`를 보고, 마지막에 `무엇을 어떻게 기록하며 좁혀 갈 것인가`를 디버깅 도구 문서로 연결할 수 있기 때문이다.
+
+### 4.5 장 정리
+
+공식 문서 기준으로 다시 보면 `260417`은 아래 다섯 가지를 배우는 날이다.
+
+1. 비전투 루프도 Behavior Tree 안의 정식 행동 브랜치다.
+2. `Wait`는 완전 정지가 아니라 반응 가능한 대기여야 한다.
+3. `Patrol`은 내비게이션과 종료 조건이 함께 맞아야 안정적으로 돈다.
+4. Perception과 Blackboard 값은 디버깅의 첫 출발점이다.
+5. 그래서 `260417`은 순찰 기능 추가보다 `AI를 필드에 안전하게 놓는 법`을 배우는 날이다.
+
+---
+
+## 제5장. 현재 프로젝트 C++ 코드로 다시 읽는 260417 핵심 구조
+
+### 5.1 왜 260417은 "가만히 있는 AI"가 아니라 "비전투 루프를 안전하게 반복하는 AI" 강의인가
 
 `260417`을 겉으로만 보면 몬스터를 잠깐 세워 두고 순찰시키는 날처럼 보인다.
 하지만 현재 프로젝트 C++를 기준으로 읽으면, 이 날짜의 핵심은 정지와 이동을 번갈아 재생하는 것이 아니라,
@@ -396,7 +476,7 @@ Wait 태스크와 붙이면 `대기 -> 이동 -> 대기 -> 이동`의 비전투 
 아래 코드는 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 구현에서 핵심만 추려 온 뒤,
 처음 보는 사람도 읽을 수 있게 설명용 주석을 붙인 축약판이다.
 
-### 4.2 `UBTTask_MonsterWait`와 `FWaitTimer`: 대기 상태를 전역 변수 없이 태스크 메모리에 저장한다
+### 5.2 `UBTTask_MonsterWait`와 `FWaitTimer`: 대기 상태를 전역 변수 없이 태스크 메모리에 저장한다
 
 현재 `MonsterWait` 태스크의 핵심은 "기다린다"보다 "기다리는 상태를 어디에 저장하느냐"에 있다.
 이 구현은 대기 완료 여부를 전역 bool이나 몬스터 멤버에 두지 않고, 태스크 전용 메모리 안에 넣는다.
@@ -435,7 +515,7 @@ uint16 UBTTask_MonsterWait::GetInstanceMemorySize() const
 덤프 기준으로도 `BT_Monster_Normal`의 `MonsterWait` 노드는 `Memory=16`으로 잡혀 있다.
 즉 강의에서 말한 `NodeMemory`는 개념 설명이 아니라 현재 프로젝트가 실제로 쓰는 런타임 메모리 구조다.
 
-### 4.3 `ExecuteTask()`, `TickTask()`, `WaitFinish()`: 대기 중에도 계속 반응성을 유지한다
+### 5.3 `ExecuteTask()`, `TickTask()`, `WaitFinish()`: 대기 중에도 계속 반응성을 유지한다
 
 `MonsterWait`의 실제 흐름을 보면 왜 기본 `Wait` 노드 대신 커스텀 태스크를 썼는지 바로 이해된다.
 
@@ -515,7 +595,7 @@ void UBTTask_MonsterWait::TickTask(
 
 이 설계 때문에 `Failed`는 오류가 아니라 "다음 상태 전환을 열어 주는 제어 신호"가 된다.
 
-### 4.4 `OnTaskFinished()`: 끝난 타이머를 정리해서 뒤늦은 콜백을 막는다
+### 5.4 `OnTaskFinished()`: 끝난 타이머를 정리해서 뒤늦은 콜백을 막는다
 
 커스텀 태스크에서 정말 중요한 습관이 정리 단계다.
 현재 구현은 `OnTaskFinished()`에서 타이머를 명시적으로 비운다.
@@ -537,7 +617,7 @@ void UBTTask_MonsterWait::OnTaskFinished(
 이 코드를 보면 `MonsterWait`는 그냥 시간만 재는 태스크가 아니라,
 `시작 -> 틱 감시 -> 타이머 완료 -> 종료 -> 정리`까지 전체 수명주기를 깔끔하게 관리하는 태스크라는 점이 드러난다.
 
-### 4.5 `AMonsterSpawnPoint`와 `AMonsterBase`: 순찰 루프의 입력 데이터는 스폰 시점에 이미 주입된다
+### 5.5 `AMonsterSpawnPoint`와 `AMonsterBase`: 순찰 루프의 입력 데이터는 스폰 시점에 이미 주입된다
 
 비전투 루프가 제대로 돌려면 `Patrol` 태스크가 읽을 데이터가 먼저 들어와 있어야 한다.
 그 입력을 준비하는 쪽이 `MonsterSpawnPoint`와 `MonsterBase`다.
@@ -573,21 +653,26 @@ void AMonsterSpawnPoint::SpawnMonster()
 그리고 몬스터 본체는 이 배열을 아래처럼 들고 있다.
 
 ```cpp
+// 실제 순찰 좌표 배열
 TArray<FVector> mPatrolPoints;
+// 현재 목표 점 인덱스
 int32 mPatrolIndex = 1;
 
 bool GetPatrolEnable() const
 {
+    // 점이 2개 이상 있어야 순찰 가능
     return mPatrolPoints.Num() > 1;
 }
 
 FVector GetPatrolPoint() const
 {
+    // 지금 향해야 할 순찰점 반환
     return mPatrolPoints[mPatrolIndex];
 }
 
 void NextPatrol()
 {
+    // 다음 점으로 이동
     mPatrolIndex = (mPatrolIndex + 1) % mPatrolPoints.Num();
 }
 ```
@@ -596,7 +681,7 @@ void NextPatrol()
 즉 스폰 직후 첫 목표를 0번으로 잡으면 "이미 도착했다"는 식의 어색한 종료 판정이 나기 쉬워서,
 현재 구현은 처음 실제 이동 목표를 1번 인덱스로 두고 있다.
 
-### 4.6 `UBTTask_Patrol`: Target이 없을 때만 현재 인덱스 위치로 걷게 만든다
+### 5.6 `UBTTask_Patrol`: Target이 없을 때만 현재 인덱스 위치로 걷게 만든다
 
 `Patrol` 태스크는 `Trace`의 단순 복사판이 아니라, 비전투 브랜치 전용 이동 태스크다.
 실제 코드를 보면 우선순위가 아주 분명하다.
@@ -641,7 +726,7 @@ EBTNodeResult::Type UBTTask_Patrol::ExecuteTask(
 이 조건 하나라도 어긋나면 태스크는 바로 끝난다.
 그래서 순찰 버그를 볼 때는 "왜 이동이 안 되지?"보다 먼저 "지금 이 태스크가 애초에 열릴 조건이 맞았나?"를 봐야 한다.
 
-### 4.7 `TickTask()`와 `OnTaskFinished()`: 종료 조건과 다음 인덱스 준비가 루프를 완성한다
+### 5.7 `TickTask()`와 `OnTaskFinished()`: 종료 조건과 다음 인덱스 준비가 루프를 완성한다
 
 `Patrol`의 진짜 핵심은 이동 시작보다 종료 처리다.
 현재 구현은 `TickTask()`에서 종료 조건을 직접 읽고, `OnTaskFinished()`에서 다음 루프를 준비한다.
@@ -695,7 +780,7 @@ void UBTTask_Patrol::OnTaskFinished(
 여기서 `OnTaskFinished()`가 중요한 이유는, 태스크가 어떤 이유로 끝났든 일단 현재 이동을 정리하고 다음 인덱스를 준비하기 때문이다.
 그래서 `MonsterWait -> MonsterPatrol -> MonsterWait -> MonsterPatrol`이 반복되면서도 매번 다른 점을 향해 걷는 루프가 된다.
 
-### 4.8 현재 코드 기준 디버깅 순서: Blackboard, 태스크 종료 이유, Patrol 배열 순으로 좁혀 가는 것이 가장 빠르다
+### 5.8 현재 코드 기준 디버깅 순서: Blackboard, 태스크 종료 이유, Patrol 배열 순으로 좁혀 가는 것이 가장 빠르다
 
 현재 프로젝트 기준으로 `260417` 비전투 루프를 디버깅할 때는 아래 순서가 가장 효율적이다.
 
@@ -711,7 +796,7 @@ void UBTTask_Patrol::OnTaskFinished(
 특히 현재 소스 기준으로 `ClearSpawn()`는 `MonsterSpawnPoint.h`에 구현돼 있지만, 다른 소스에서 직접 호출되지는 않는다.
 즉 이번 날짜는 "완성된 리스폰 시스템"보다 "비전투 루프에 필요한 대기/순찰 문맥을 올바르게 주입하고 반복시키는 구조"에 더 초점이 있다고 보는 편이 맞다.
 
-### 4.9 장 정리
+### 5.9 장 정리
 
 현재 C++ 코드로 읽으면 `260417`의 비전투 루프는 다음 한 문장으로 요약할 수 있다.
 
@@ -738,7 +823,7 @@ void UBTTask_Patrol::OnTaskFinished(
 1. `MonsterWait`로 반응 가능한 대기를 만든다.
 2. `MonsterPatrol`로 점 기반 순찰 루프를 만든다.
 3. Blackboard, BT 브랜치, 거리 판정, 순찰 배열을 함께 보며 디버깅한다.
-4. 현재 C++ 기준으로는 `SpawnMonster() -> SetPatrolPoints() -> MonsterWait -> MonsterPatrol -> NextPatrol()`이 비전투 루프의 실제 파이프라인이다.
+4. 공식 문서 기준으로는 이 흐름이 `Behavior Tree + Navigation + AI Perception + Visual Logger` 조합으로 설명되고, 현재 C++ 기준으로는 `SpawnMonster() -> SetPatrolPoints() -> MonsterWait -> MonsterPatrol -> NextPatrol()`이 비전투 루프의 실제 파이프라인이다.
 
 이 흐름을 이해하면 비전투 루프는 아래처럼 읽힌다.
 
@@ -754,6 +839,7 @@ void UBTTask_Patrol::OnTaskFinished(
 - `mPatrolIndex = 1`이 필요한 이유를 순찰 시작 위치 관점에서 설명할 수 있는가
 - Patrol 태스크가 `Succeeded`와 `Failed`를 어떤 상황에서 각각 쓰는지 구분할 수 있는가
 - Patrol이 이상하게 끝날 때 `Target`, `WaitTime`, `MoveStatus`, 거리 판정, 인덱스 전환을 어떤 순서로 볼지 정리했는가
+- `Behavior Tree`, `Basic Navigation`, `AI Perception`, `Visual Logger` 문서가 어느 파트를 보강하는지 연결할 수 있는가
 - `GetPatrolEnable()`과 `mPatrolPoints` 개수가 실제로 순찰 가능 여부를 어떻게 바꾸는지 설명할 수 있는가
 - `WaitFinish() -> Timer->Complete -> TickTask() -> FinishLatentTask()` 흐름을 코드 기준으로 설명할 수 있는가
 
@@ -762,7 +848,7 @@ void UBTTask_Patrol::OnTaskFinished(
 1. `MonsterWait`가 대기 중 Target을 감지하면 즉시 빠져나오는 구조는 플레이 감각에 어떤 차이를 만드는가.
 2. Patrol을 곡선 추종이 아니라 점 이동으로 구현한 선택은 어떤 장단점을 가지는가.
 3. `mPatrolIndex`를 0이 아니라 1로 두는 설계는 모든 SpawnPoint 배치에서 항상 안전한가.
-4. 프로젝트 디버깅에서 `Target`, `WaitTime`, `PathStatus`, `mPatrolIndex`를 어떤 순서로 확인하면 가장 빨리 원인을 좁힐 수 있는가.
+4. 공식 문서의 `Behavior Tree / Navigation / AI Perception / Visual Logger` 구도를 먼저 알고 강의를 읽으면 무엇이 더 덜 헷갈릴까.
 5. `ClearSpawn()`를 실제 사망/리스폰 루프에 연결하려면 `MonsterBase`, `MonsterSpawnPoint`, `EndPlay()` 중 어디에 책임을 두는 것이 가장 자연스러운가.
 
 ## 권장 과제
@@ -770,5 +856,5 @@ void UBTTask_Patrol::OnTaskFinished(
 1. Blackboard의 `WaitTime`을 몬스터 종류별로 다르게 주고 비전투 리듬 차이를 비교한다.
 2. Patrol 포인트 수가 1개, 2개, 4개일 때 루프 감각이 어떻게 달라지는지 기록한다.
 3. Patrol 도착 판정 임계값 `5.f`를 여러 값으로 바꿔 보고, 끊김이나 멈춤 현상이 어떻게 달라지는지 비교한다.
-4. SpawnPoint의 스플라인 점 개수를 1개, 2개, 4개로 바꿔 보고 `GetPatrolEnable()`과 비전투 루프가 어떻게 달라지는지 비교한다.
+4. 공식 문서의 `Behavior Tree User Guide`, `Basic Navigation`, `AI Perception`, `Visual Logger`를 읽고 강의 구조와 어떤 용어가 대응되는지 표로 정리해 본다.
 5. `BTTask_MonsterWait.cpp`, `BTTask_Patrol.cpp`, `MonsterBase.h`, `MonsterSpawnPoint.cpp`를 기준으로 `대기 시작 -> 대기 종료 -> 순찰 시작 -> 순찰 종료 -> 다음 인덱스 준비` 시퀀스 다이어그램을 그려 본다.

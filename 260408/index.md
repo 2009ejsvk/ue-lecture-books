@@ -22,6 +22,7 @@ title: 260408 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투
 - 원본 영상에서 다시 추출한 대표 장면 캡처
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 C++ 소스
 - `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility`의 소스/애님 덤프
+- Epic Developer Community의 언리얼 공식 문서
 
 ## 학습 목표
 
@@ -29,6 +30,7 @@ title: 260408 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투
 - 일반 `Notify`, `Notify State`, `UAnimNotify` 기반 커스텀 노티파이의 차이를 구분할 수 있다.
 - `mAttackEnable`, `mComboEnable`, `mAttackIndex`, `mAttackSection`이 데이터 기반 콤보와 어떻게 연결되는지 말할 수 있다.
 - `PlayerTemplateAnimInstance`, `TemplateFullBody` 슬롯, `TMap` 기반 에셋 매핑이 왜 템플릿 구조에 필요한지 설명할 수 있다.
+- `Animation Montage`, `Animation Notifies`, `Using Layered Animations`, `Animation Blueprint Linking` 공식 문서가 왜 `260408`과 직접 연결되는지 설명할 수 있다.
 - `AttackKey() -> InputAttack() -> PlayAttack() -> AnimNotify_PlayerAttack -> NormalAttack()` 흐름과 스킬 캐스팅 준비의 `PlaySkill1() -> AnimNotify_SkillCasting()` 흐름을 실제 C++ 기준으로 설명할 수 있다.
 
 ## 강의 흐름 요약
@@ -37,6 +39,8 @@ title: 260408 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투
 2. 특정 프레임에 일어날 일은 노티파이로 지정하고, 입력 창구도 노티파이로 연다.
 3. 몽타주 섹션과 콤보 플래그를 이용해 캐릭터별 섹션 체인을 데이터로 제어한다.
 4. 마지막으로 공용 템플릿 애님 구조를 만들어 캐릭터별 차이는 에셋 매핑으로만 남긴다.
+5. 언리얼 공식 문서를 통해 `Montage`, `Slot`, `Notify`, 레이어드 블렌딩, 애님 템플릿 분리가 엔진 표준 용어로 어떻게 설명되는지 확인한다.
+6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `PlayerAnimInstance`, `PlayerTemplateAnimInstance`, `AnimNotify_PlayerAttack`, `Shinbi`, `Wraith` 안에서 어떻게 이어지는지 확인한다.
 
 ---
 
@@ -71,14 +75,19 @@ title: 260408 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투
 여기에는 공격 몽타주와 공격 섹션 배열, 그리고 콤보 상태를 관리할 값들이 모여 있다.
 
 ```cpp
+// 실제 평타 몽타주 자산
 UPROPERTY(EditAnywhere, BlueprintReadOnly)
 TObjectPtr<UAnimMontage> mAttackMontage;
 
+// Attack1, Attack2 같은 섹션 이름 목록
 UPROPERTY(EditAnywhere, BlueprintReadOnly)
 TArray<FName> mAttackSection;
 
+// 지금 몇 번째 콤보 타를 보고 있는지
 int32 mAttackIndex = 0;
+// 다음 타 입력을 받아도 되는지
 bool mComboEnable = false;
+// 첫 공격 시작이 가능한지
 bool mAttackEnable = true;
 ```
 
@@ -96,6 +105,7 @@ bool mAttackEnable = true;
 ```cpp
 if (mAttackEnable)
 {
+    // 첫 입력이면 공격 시작 권한을 잠그고 1타 섹션부터 재생한다.
     if (!Montage_IsPlaying(mAttackMontage))
     {
         mAttackEnable = false;
@@ -106,6 +116,7 @@ if (mAttackEnable)
 }
 else if (mComboEnable)
 {
+    // 노티파이가 다음 입력을 허용한 상태라면 다음 섹션으로 넘어간다.
     mAttackIndex = (mAttackIndex + 1) % mAttackSection.Num();
     Montage_Play(mAttackMontage, 1.f);
     Montage_JumpToSection(mAttackSection[mAttackIndex], mAttackMontage);
@@ -133,6 +144,7 @@ else if (mComboEnable)
 void UPlayerAnimInstance::NativeBeginPlay()
 {
     Super::NativeBeginPlay();
+    // 몽타주가 끝났을 때 정리 함수를 받도록 델리게이트를 연결한다.
     OnMontageEnded.AddDynamic(this, &UPlayerAnimInstance::MontageEnd);
 }
 ```
@@ -191,11 +203,13 @@ void AnimNotify_ComboEnd();
 
 void UPlayerAnimInstance::AnimNotify_ComboStart()
 {
+    // 이 프레임부터는 다음 콤보 입력을 받아 준다.
     mComboEnable = true;
 }
 
 void UPlayerAnimInstance::AnimNotify_ComboEnd()
 {
+    // 이 프레임이 지나면 더는 다음 입력을 받지 않는다.
     mComboEnable = false;
 }
 ```
@@ -220,10 +234,12 @@ void UAnimNotify_PlayerAttack::Notify(USkeletalMeshComponent* MeshComp,
 {
     Super::Notify(MeshComp, Animation, EventReference);
 
+    // 이 애니메이션을 재생 중인 주인이 현재 플레이어 캐릭터인지 확인한다.
     TObjectPtr<APlayerCharacter> PlayerChar = MeshComp->GetOwner<APlayerCharacter>();
 
     if (IsValid(PlayerChar))
     {
+        // 정확히 이 프레임에만 실제 공격 판정 함수를 호출한다.
         PlayerChar->NormalAttack();
     }
 }
@@ -296,9 +312,11 @@ class UE20252_API UPlayerTemplateAnimInstance : public UPlayerAnimInstance
     GENERATED_BODY()
 
 protected:
+    // Idle, JumpStart 같은 단일 시퀀스 자산 모음
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<FString, TObjectPtr<UAnimSequence>> mAnimMap;
 
+    // Run, Aim 같은 블렌드 자산 모음
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<FString, TObjectPtr<UBlendSpace>> mBlendSpaceMap;
 };
@@ -340,9 +358,95 @@ protected:
 
 ---
 
-## 제4장. 현재 프로젝트 C++ 코드로 다시 읽는 260408 핵심 구조
+## 제4장. 언리얼 공식 문서로 다시 읽는 260408 핵심 구조
 
-### 4.1 왜 260408은 "입력 처리"와 "실제 공격 실행"을 분리해서 봐야 하는가
+### 4.1 왜 260408부터 공식 문서를 같이 보는가
+
+`260408`은 공격 애니메이션을 단순 재생이 아니라 구조로 다루는 날이다.
+입문자 입장에서는 `AnimMontage`, `Slot`, `Notify`, `Combo Section`이 전부 개별 기능처럼 보이지만, 공식 문서에서는 이들이 "애니메이션 시간축을 게임플레이 로직과 연결하는 도구"로 정리된다.
+
+이번 보강에서는 특히 아래 공식 문서를 기준점으로 삼는다.
+
+- [Animation Montage in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-montage-in-unreal-engine?application_version=5.6)
+- [Animation Notifies in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-notifies-in-unreal-engine?application_version=5.6)
+- [Using Layered Animations in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-layered-animations-in-unreal-engine)
+- [Animation Blueprint Linking in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-blueprint-linking-in-unreal-engine?application_version=5.6)
+- [Transition Rules in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/transition-rules-in-unreal-engine?application_version=5.6)
+
+즉 이 장의 목적은 강의 내용을 다른 방식으로 반복하는 것이 아니라, `260408`에서 만든 전투 애니메이션 구조가 언리얼 표준 문서에서는 어떤 자산과 그래프 문법으로 묶이는지 보여 주는 데 있다.
+
+### 4.2 공식 문서의 `Animation Montage`와 `Using Layered Animations`는 왜 공격이 로코모션과 분리돼야 하는지 다시 확인시켜 준다
+
+강의 1장의 핵심은 공격 애니메이션을 로코모션 그래프 한가운데 직접 꽂지 않는다는 점이다.
+공식 문서의 `Animation Montage`와 `Using Layered Animations`도 정확히 같은 문제를 다룬다.
+
+즉 언리얼 표준 해법은 아래와 같다.
+
+- 이동과 점프 같은 기본 포즈는 상태 머신과 로코모션이 만든다.
+- 공격 같은 일시적 행동은 `Montage`로 재생한다.
+- 그 몽타주가 그래프 안으로 들어오는 통로는 `Slot`이 맡는다.
+- 필요하면 `Layered Blend`나 상체 슬롯 규약으로 이동과 공격을 공존시킨다.
+
+이 관점으로 보면 강의의 `TemplateFullBody` 슬롯도 임의 규칙이 아니라, 공식 문서가 설명하는 "몽타주 전용 통로"를 프로젝트 공용 규약으로 고정한 사례라고 이해할 수 있다.
+
+### 4.3 공식 문서의 `Animation Notifies`는 강의의 `ComboStart / ComboEnd / PlayerAttack`을 "시간표" 개념으로 정리해 준다
+
+강의 2장은 노티파이를 애니메이션 안의 시간표처럼 설명한다.
+공식 문서의 `Animation Notifies`도 정확히 같은 관점이다.
+
+즉 노티파이는 "공격이 있다"는 상태를 표현하는 것이 아니라, 정확히 어느 프레임에 어떤 일이 일어나야 하는지를 애니메이션 자산 안에 심는 장치다.
+
+그래서 이번 날짜의 주요 노티파이도 역할이 갈린다.
+
+- `ComboStart`: 다음 입력을 받을 수 있는 창구 열기
+- `ComboEnd`: 입력 창구 닫기
+- `AnimNotify_PlayerAttack`: 실제 타격 함수 호출
+- `AnimNotify_SkillCasting`: 스킬 발동 시점 통보
+
+이 구조 덕분에 입력 시점과 실제 타격 시점을 분리할 수 있고, 캐릭터별 애니메이션 길이가 달라도 프레임 정확도를 유지할 수 있다.
+
+### 4.4 `Animation Blueprint Linking` 문서는 강의의 `Animation Template` 구조가 왜 필요한지 설명해 준다
+
+강의 3장의 후반부는 공격 구조를 캐릭터 공용 템플릿으로 올리는 파트다.
+여기서 `PlayerTemplateAnimInstance`, `ABPPlayerTemplate`, 공통 슬롯 규약, 공용 노티파이 규칙이 등장한다.
+
+공식 문서의 `Animation Blueprint Linking`은 이런 설계를 더 일반적인 방식으로 설명한다.
+즉 애님 로직이 커질수록 한 블루프린트에 다 넣기보다, 공용 구조와 개별 자산 차이를 나누는 편이 협업과 유지보수에 유리하다는 것이다.
+
+`260408`의 템플릿 구조도 정확히 같은 방향이다.
+
+- 공통 그래프와 공통 규칙은 템플릿에 둔다.
+- 캐릭터별 차이는 에셋 매핑과 파생 블루프린트로 처리한다.
+
+즉 이 날짜는 "공격이 나온다"보다 먼저, 공격 애니메이션 구조가 캐릭터 수가 늘어나도 버티게 만드는 날이라고 볼 수 있다.
+
+### 4.5 260408 공식 문서 추천 읽기 순서
+
+이번 날짜는 아래 순서로 공식 문서를 읽으면 가장 자연스럽다.
+
+1. [Animation Montage in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-montage-in-unreal-engine?application_version=5.6)
+2. [Using Layered Animations in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/using-layered-animations-in-unreal-engine)
+3. [Animation Notifies in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-notifies-in-unreal-engine?application_version=5.6)
+4. [Transition Rules in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/transition-rules-in-unreal-engine?application_version=5.6)
+5. [Animation Blueprint Linking in Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/animation-blueprint-linking-in-unreal-engine?application_version=5.6)
+
+이 순서가 좋은 이유는 먼저 `공격을 어떻게 재생하는가`를 몽타주 기준으로 잡고, 그 다음 `그 타이밍을 어떻게 통제하는가`를 노티파이와 전이 규칙으로 읽고, 마지막에 `그 구조를 어떻게 템플릿으로 키울 것인가`까지 이어서 볼 수 있기 때문이다.
+
+### 4.6 장 정리
+
+공식 문서 기준으로 다시 보면 `260408`은 아래 다섯 가지를 배우는 날이다.
+
+1. 공격은 상태 머신 안이 아니라 `Montage + Slot`으로 분리하는 편이 안전하다.
+2. 노티파이는 애니메이션 안의 시간표다.
+3. 콤보는 버튼 연타가 아니라 열린 입력 창구의 연장 규칙이다.
+4. 레이어드 블렌딩과 슬롯 규약 덕분에 이동과 공격이 공존할 수 있다.
+5. 템플릿 애님 구조는 이 규칙을 캐릭터 공용 자산으로 끌어올린다.
+
+---
+
+## 제5장. 현재 프로젝트 C++ 코드로 다시 읽는 260408 핵심 구조
+
+### 5.1 왜 260408은 "입력 처리"와 "실제 공격 실행"을 분리해서 봐야 하는가
 
 `260408`을 처음 배우는 사람은 보통 이렇게 생각하기 쉽다.
 "공격 버튼을 누르면 바로 데미지 함수가 호출되겠지."
@@ -359,7 +463,7 @@ protected:
 
 아래 코드는 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 구현에서 핵심만 추려 온 뒤, 초보자도 읽을 수 있게 설명용 주석을 붙인 축약판이다.
 
-### 4.2 `AttackKey()`와 `InputAttack()`: 입력은 일단 "애니메이션 시작 신호"만 보낸다
+### 5.2 `AttackKey()`와 `InputAttack()`: 입력은 일단 "애니메이션 시작 신호"만 보낸다
 
 공격 입력의 첫 진입점은 `APlayerCharacter::AttackKey()`다.
 그런데 이 함수는 직접 데미지를 주지 않는다.
@@ -415,7 +519,7 @@ void AWraith::InputAttack()
 단지 전투 애니메이션의 시간축을 열었을 뿐이다.
 물론 `Shinbi`처럼 스킬 확정 입력에서 별도 액터 생성이 바로 붙는 예외는 있지만, 구조의 중심은 여전히 "입력 직후 실제 판정"이 아니라 "먼저 몽타주를 열고 그 뒤를 노티파이와 섹션으로 제어한다"에 있다.
 
-### 4.3 `UPlayerAnimInstance`: 몽타주, 섹션, 콤보 상태를 한곳에 모아 둔다
+### 5.3 `UPlayerAnimInstance`: 몽타주, 섹션, 콤보 상태를 한곳에 모아 둔다
 
 공격 애니메이션 구조의 실제 중심은 `UPlayerAnimInstance`다.
 이 클래스는 단순 애님 재생기가 아니라, 전투 몽타주 상태를 들고 있는 컨트롤 타워에 가깝다.
@@ -465,7 +569,7 @@ protected:
 - 지금 몇 번째 섹션까지 진행됐는가
 - 지금 기본 공격 몽타주를 쓰는가, 스킬 몽타주를 쓰는가
 
-### 4.4 `PlayAttack()`: 첫 타 시작과 다음 타 연장을 다른 규칙으로 처리한다
+### 5.4 `PlayAttack()`: 첫 타 시작과 다음 타 연장을 다른 규칙으로 처리한다
 
 공격 몽타주를 실제로 재생하는 핵심 함수는 `PlayAttack()`이다.
 이 함수는 버튼 하나를 받지만, 상황에 따라 두 가지 전혀 다른 일을 한다.
@@ -522,7 +626,7 @@ void UPlayerAnimInstance::PlayAttack()
 또 하나 중요한 점은, 콤보 수가 코드에 박혀 있지 않다는 것이다.
 `mAttackSection.Num()`을 기준으로 다음 섹션을 찾기 때문에, 몇 단 콤보인지 자체는 몽타주 데이터가 결정한다.
 
-### 4.5 `AnimNotify_ComboStart()`, `AnimNotify_ComboEnd()`, `OnMontageEnded`: 열린 창구를 제어하고 끝나면 정리한다
+### 5.5 `AnimNotify_ComboStart()`, `AnimNotify_ComboEnd()`, `OnMontageEnded`: 열린 창구를 제어하고 끝나면 정리한다
 
 콤보 구조를 정말 콤보답게 만드는 것은 노티파이다.
 현재 프로젝트는 함수형 노티파이 이름 규칙을 그대로 활용한다.
@@ -573,7 +677,7 @@ void UPlayerAnimInstance::MontageEndOverride(UAnimMontage* Montage, bool bInterr
 즉 `ComboStart/End`는 "짧은 창구"를 관리하고, `MontageEndOverride()`는 "전투 상태의 완전한 리셋"을 담당한다.
 이 둘이 같이 있어야 다음 공격이 꼬이지 않는다.
 
-### 4.6 `PlaySkill1()`과 `AnimNotify_SkillCasting()`: 스킬도 같은 몽타주 구조 안에서 굴러간다
+### 5.6 `PlaySkill1()`과 `AnimNotify_SkillCasting()`: 스킬도 같은 몽타주 구조 안에서 굴러간다
 
 현재 프로젝트는 기본 공격만 몽타주 구조를 쓰는 것이 아니다.
 스킬도 같은 틀 안에 들어 있다.
@@ -622,7 +726,7 @@ void UPlayerTemplateAnimInstance::AnimNotify_SkillCasting()
 또 `AShinbi::Skill1()`은 스킬 준비 상태에 들어갈 때 `PlaySkill1()`을 호출하고, `AShinbi::InputAttack()`은 이미 마법진이 깔려 있으면 다시 `PlaySkill1()`과 `ClearSkill1()`을 호출해 실제 스킬 단계로 넘어간다.
 즉 적어도 스킬의 캐스팅 준비 단계는 기본 공격과 비슷하게 `입력 -> 몽타주 -> 노티파이 -> 실제 로직` 흐름을 공유한다.
 
-### 4.7 `UAnimNotify_PlayerAttack`: 실제 타격은 애니메이션의 정확한 프레임에서 일어난다
+### 5.7 `UAnimNotify_PlayerAttack`: 실제 타격은 애니메이션의 정확한 프레임에서 일어난다
 
 이제 `260408`의 가장 중요한 결론 지점이 나온다.
 실제 공격은 `InputAttack()`에서 바로 일어나지 않는다.
@@ -679,7 +783,7 @@ void AWraith::NormalAttack()
 즉 `UAnimNotify_PlayerAttack`는 "지금 때려라"라는 공통 타이밍만 제공하고, 무엇으로 때릴지는 각 캐릭터가 정한다.
 이것이 `260408`의 템플릿 구조가 좋은 이유다.
 
-### 4.8 `PlayerTemplateAnimInstance`: 공통 그래프와 공통 노티파이 규칙을 묶는 템플릿 레이어
+### 5.8 `PlayerTemplateAnimInstance`: 공통 그래프와 공통 노티파이 규칙을 묶는 템플릿 레이어
 
 `UPlayerTemplateAnimInstance`는 단순히 맵 두 개를 더 가진 클래스가 아니다.
 실제 역할은 더 크다.
@@ -691,9 +795,11 @@ class UE20252_API UPlayerTemplateAnimInstance : public UPlayerAnimInstance
     GENERATED_BODY()
 
 protected:
+    // 공용 단일 애니메이션 자산을 이름표로 관리한다.
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<FString, TObjectPtr<UAnimSequence>> mAnimMap;
 
+    // 공용 Blend Space 자산도 따로 보관한다.
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TMap<FString, TObjectPtr<UBlendSpace>> mBlendSpaceMap;
 };
@@ -709,7 +815,7 @@ protected:
 즉 `260408`의 템플릿 구조는 "코드 공용화"만이 아니라, 슬롯 이름, 노티파이 흐름, 섹션 진행 방식까지 전부 공통 규약으로 묶는 작업이다.
 그래서 캐릭터가 늘어나도 전투 애니메이션 설계를 처음부터 다시 짤 필요가 줄어든다.
 
-### 4.9 장 정리
+### 5.9 장 정리
 
 제4장을 C++ 기준으로 다시 묶으면 이렇게 된다.
 
@@ -731,7 +837,7 @@ protected:
 2. `Notify`와 `UAnimNotify`가 전투 타이밍을 애니메이션 안에 심는다.
 3. `mAttackEnable`, `mComboEnable`, `mAttackIndex`, `mAttackSection`이 캐릭터별 콤보 규칙을 데이터 기반으로 만든다.
 4. `PlayerTemplateAnimInstance`, `ABPPlayerTemplate`, `TemplateFullBody` 슬롯 규약이 이 구조를 캐릭터 공용 템플릿으로 끌어올린다.
-5. 실제 C++에서는 `AttackKey()`가 몽타주를 열고, `AnimNotify_PlayerAttack`와 `AnimNotify_SkillCasting()`가 정확한 프레임에 다시 `NormalAttack()`, `Skill1Casting()`을 호출한다.
+5. 언리얼 공식 문서 기준으로는 이 흐름이 `Montage + Slot + Notify + Layered Animation + Animation Blueprint Linking` 조합으로 설명되고, 실제 C++에서는 `AttackKey()`가 몽타주를 열고 `AnimNotify_PlayerAttack`와 `AnimNotify_SkillCasting()`가 정확한 프레임에 다시 `NormalAttack()`, `Skill1Casting()`을 호출한다.
 
 즉 이번 날짜는 전투 "결과"보다 전투 "구조"를 만드는 날이다.
 실제 판정과 이펙트는 다음 단계에서 붙지만, 그 모든 것은 여기서 만든 시간 제어와 템플릿 구조 위에 올라간다.
@@ -744,6 +850,7 @@ protected:
 - 일반 Notify, Notify State, 커스텀 `UAnimNotify`의 차이를 말할 수 있는가
 - `PlayAttack()`이 첫 타 시작과 콤보 연장을 어떻게 다르게 처리하는지 설명할 수 있는가
 - 템플릿 구조가 캐릭터별 애님 블루프린트 복제를 어떻게 줄이는지 설명할 수 있는가
+- `Animation Montage`, `Animation Notifies`, `Using Layered Animations`, `Animation Blueprint Linking` 중 어떤 문서가 각 파트를 보강하는지 연결할 수 있는가
 - `AttackKey() -> InputAttack() -> PlayAttack() -> AnimNotify_PlayerAttack -> NormalAttack()` 호출 흐름을 설명할 수 있는가
 - 스킬 캐스팅 준비도 `PlaySkill1() -> AnimNotify_SkillCasting() -> Skill1Casting()` 흐름으로 이어진다는 점을 설명할 수 있는가
 
@@ -752,7 +859,7 @@ protected:
 1. 공격을 몽타주로 분리하지 않고 상태 머신 내부에서만 처리하면 어떤 유지보수 문제가 생길까
 2. 콤보 입력 창구를 코드 타이머가 아니라 노티파이로 여닫는 방식의 장점은 무엇일까
 3. `UAnimNotify` 기반 클래스형 노티파이는 어떤 종류의 기능에서 특히 유리할까
-4. 템플릿 애님 구조를 도입할 때 공용화와 캐릭터 개성 사이의 경계는 어디에 두는 것이 좋을까
+4. 공식 문서의 `Montage`, `Notify`, `Layered Animation` 설명을 먼저 읽으면 이번 강의에서 무엇이 더 덜 헷갈릴까
 5. 입력 시점에 바로 데미지를 주는 구조와, 노티파이 프레임에서 실제 공격을 실행하는 구조는 플레이 감각에서 어떤 차이를 만들까
 
 ## 권장 과제
@@ -760,5 +867,5 @@ protected:
 1. 공격 몽타주에 `Attack4` 섹션을 추가하고, `mAttackSection` 배열만 바꿔서 4단 콤보가 이어지는지 실험한다.
 2. `ComboStart`와 `ComboEnd` 위치를 앞뒤로 옮겨 보면서 콤보 체감이 어떻게 바뀌는지 기록한다.
 3. `AnimNotify_PlayerAttack`와 비슷한 방식으로 `AnimNotify_PlayFootstep` 같은 커스텀 노티파이를 설계해 본다.
-4. `PlayerTemplateAnimInstance`에 몽타주나 스킬 섹션 매핑까지 확장했을 때 어떤 관리 방식이 더 적절한지 비교한다.
+4. 공식 문서의 `Animation Montage`, `Animation Notifies`, `Animation Blueprint Linking`를 읽고, 강의 구조와 어떤 용어가 대응되는지 표로 정리해 본다.
 5. `PlayerCharacter.cpp`, `PlayerAnimInstance.cpp`, `AnimNotify_PlayerAttack.cpp`를 열어 공격 입력이 실제 판정으로 이어지는 호출 순서를 직접 화살표 다이어그램으로 정리해 본다.
