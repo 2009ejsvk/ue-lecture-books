@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>260416 몬스터 전투 AI 대학 강의교재</title>
+    <meta
+      name="description"
+      content="260416 일자 언리얼 강의를 UE20252 실제 프로젝트 소스와 함께 읽는 대학 강의교재형 정리본"
+    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@500;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="../shared-styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="noise" aria-hidden="true"></div>
+
+      <header class="cover">
+        <div class="cover-copy">
+          <p class="cover-kicker" id="course-code"></p>
+          <h1 id="course-title"></h1>
+          <p class="cover-subtitle" id="course-subtitle"></p>
+          <div class="cover-actions">
+            <a href="#chapters" class="button solid">본문 읽기</a>
+            <a href="#source-atlas" class="button ghost">프로젝트 소스 보기</a>
+          </div>
+        </div>
+        <aside class="cover-dossier panel" id="course-dossier"></aside>
+      </header>
+
+      <section class="meta-grid">
+        <article class="panel" id="course-abstract"></article>
+        <article class="panel" id="course-outcomes"></article>
+      </section>
+
+      <nav class="quick-nav panel" id="quick-nav" aria-label="목차 이동"></nav>
+
+      <section class="section" id="syllabus">
+        <div class="section-heading">
+          <p class="section-label">Syllabus</p>
+          <h2>하루 강의의 학습 진행표</h2>
+        </div>
+        <div class="syllabus-grid" id="roadmap-grid"></div>
+      </section>
+
+      <section class="section" id="pipeline">
+        <div class="section-heading">
+          <p class="section-label">System Flow</p>
+          <h2>강의가 만드는 런타임 흐름</h2>
+        </div>
+        <div class="pipeline-grid" id="pipeline-grid"></div>
+      </section>
+
+      <section class="section" id="source-atlas">
+        <div class="section-heading">
+          <p class="section-label">Source Atlas</p>
+          <h2>UE20252 프로젝트 구현 지도</h2>
+        </div>
+        <div class="atlas-grid" id="atlas-grid"></div>
+      </section>
+
+      <main id="chapters" class="chapters" aria-live="polite"></main>
+
+      <section class="section appendix" id="appendix">
+        <div class="section-heading">
+          <p class="section-label">Appendix</p>
+          <h2>복습 질문과 실습 체크리스트</h2>
+        </div>
+        <div class="appendix-grid">
+          <article class="panel" id="global-checklist"></article>
+          <article class="panel" id="glossary"></article>
+          <article class="panel" id="seminar-questions"></article>
+          <article class="panel" id="assignments"></article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>편집 버전: 2026-04-20</p>
+        <p>소스 기준 경로: D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252</p>
+      </footer>
+    </div>
+
+    <dialog class="lightbox" id="lightbox">
+      <button class="lightbox-close" id="lightbox-close" aria-label="도판 닫기">닫기</button>
+      <figure class="lightbox-figure">
+        <img id="lightbox-image" alt="">
+        <figcaption id="lightbox-caption"></figcaption>
+      </figure>
+    </dialog>
+
+    <script src="./data.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>
