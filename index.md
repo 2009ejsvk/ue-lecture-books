@@ -9,6 +9,7 @@ title: UE Lecture Books
 
 ## 교재 목록
 
+- [260407. 플레이어 로코모션 애니메이션 기초](./260407/)
 - [260408. 플레이어 공격 애니메이션 구조](./260408/)
 - [260409. 플레이어 전투 파이프라인 기초](./260409/)
 - [260414. 몬스터 AI 기반 구축](./260414/)
@@ -24,6 +25,7 @@ title: UE Lecture Books
 
 ## 현재 포함된 주제
 
+- `260407`: AnimInstance, Animation Blueprint, Aim Offset, GroundLocomotion, Blend Space, Jump 상태 머신
 - `260408`: AnimMontage, Slot, Notify, Combo Section, PlayerAnimInstance, Animation Template
 - `260409`: PlayerTemplateAnimInstance, 충돌 채널/프로파일, Sweep, TakeDamage, 파티클, 사운드, 투사체
 - `260414`: MonsterBase, AIController, AIPerception, Behavior Tree, Blackboard, MonsterState, DataTable, AssetManager
@@ -34,10 +36,11 @@ title: UE Lecture Books
 ## 저장소 구조
 
 - `index.md`: 루트 서가
+- `260407/index.md`: 2026-04-07 강의 교재
 - `260408/index.md`: 2026-04-08 강의 교재
 - `260409/index.md`: 2026-04-09 강의 교재
 - `260414/index.md`: 2026-04-14 강의 교재
 - `260415/index.md`: 2026-04-15 강의 교재
 - `260416/index.md`: 2026-04-16 강의 교재
 - `260417/index.md`: 2026-04-17 강의 교재
-- `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
