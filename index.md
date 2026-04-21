@@ -9,18 +9,18 @@ title: UE Lecture Books
 
 ## 교재 목록
 
-- [260401. 언리얼 프로젝트와 블루프린트 입문](./260401/)
-- [260402. 플레이어 블루프린트와 발사체 기초](./260402/)
-- [260403. 충돌, 태그, 트리거 기반 기믹 입문](./260403/)
-- [260406. 플레이어 C++ 전환과 입력 시스템 기초](./260406/)
-- [260407. 플레이어 로코모션 애니메이션 기초](./260407/)
-- [260408. 플레이어 공격 애니메이션 구조](./260408/)
-- [260409. 플레이어 전투 파이프라인 기초](./260409/)
-- [260414. 몬스터 AI 기반 구축](./260414/)
-- [260415. 몬스터 스폰과 순찰 AI 기초](./260415/)
-- [260416. 몬스터 전투 AI 루프](./260416/)
-- [260417. 몬스터 비전투 루프와 순찰 디버깅](./260417/)
-- [260420. 몬스터 사망, 랙돌, 아이템 박스 드롭](./260420/)
+- [260401. 언리얼 프로젝트를 처음 만들고 에디터 화면, 클래스 구조, 블루프린트 기초를 익히는 입문](./260401/)
+- [260402. 플레이어를 움직이고 카메라를 붙이고 공격 입력으로 총알을 생성하는 블루프린트 기초](./260402/)
+- [260403. 충돌 판정, 태그, 타이머, 트리거 박스로 상호작용과 함정을 만드는 기초](./260403/)
+- [260406. 플레이어를 C++ 클래스로 옮기고 GameMode와 입력 자산을 연결하는 기초](./260406/)
+- [260407. 이동 속도와 시선 값을 애니메이션으로 연결해 자연스러운 플레이어 움직임을 만드는 기초](./260407/)
+- [260408. 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투 애니메이션을 조립하는 구조](./260408/)
+- [260409. 공격 판정, 데미지, 이펙트, 사운드, 투사체를 묶어 플레이어 전투를 완성하는 기초](./260409/)
+- [260414. 몬스터 본체, 감지, 비헤이비어 트리, 블랙보드, 데이터 관리까지 AI 기반을 세우는 날](./260414/)
+- [260415. 몬스터를 스폰하고 순찰시키고 플레이어를 감지하면 추적으로 바꾸는 AI 기초](./260415/)
+- [260416. 추적에서 공격으로 넘어가고 노티파이 시점에 타격하는 몬스터 전투 AI 루프](./260416/)
+- [260417. 비전투 대기와 순찰을 반복하는 AI를 만들고 순찰 버그를 디버깅하는 날](./260417/)
+- [260420. 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를 떨어뜨린 뒤 획득까지 이어지는 마무리](./260420/)
 
 ## 읽는 방식
 
@@ -30,18 +30,18 @@ title: UE Lecture Books
 
 ## 현재 포함된 주제
 
-- `260401`: 프로젝트 생성, 템플릿, 언리얼 에디터, UObject, Actor, Component, Pawn, Character, Blueprint 기초
-- `260402`: Skeletal Mesh, Movement Component, Spring Arm, Camera, IA_Move, IA_Attack, BPBullet, Spawn Actor
-- `260403`: Block/Overlap/Ignore, Projectile Stop, Actor Tag, Timer, Trigger Box, Level Blueprint
-- `260406`: PlayerCharacter, Shinbi, DefaultGameMode, InputData, MappingContext, Rotation, Jump, Attack
-- `260407`: AnimInstance, Animation Blueprint, Aim Offset, GroundLocomotion, Blend Space, Jump 상태 머신
-- `260408`: AnimMontage, Slot, Notify, Combo Section, PlayerAnimInstance, Animation Template
-- `260409`: PlayerTemplateAnimInstance, 충돌 채널/프로파일, Sweep, TakeDamage, 파티클, 사운드, 투사체
-- `260414`: MonsterBase, AIController, AIPerception, Behavior Tree, Blackboard, MonsterState, DataTable, AssetManager
-- `260415`: SpawnPoint, PatrolPath, Behavior Tree 등록, Perception, Move To
-- `260416`: MonsterAnimInstance, MonsterTrace Task, MonsterAttack Task, AnimNotify 기반 전투 루프
-- `260417`: Monster Wait Task, Monster Patrol Task, 엔진/에디터 버그 수정
-- `260420`: Monster Death, AnimNotify_Death, Ragdoll, Physics Asset, ItemBox, Drop Animation, Overlap Pickup
+- `260401`: 새 프로젝트를 만들고 템플릿을 고른 뒤, 언리얼 에디터 각 패널을 읽는 법과 `UObject -> Actor -> Component -> Pawn -> Character` 관계, 블루프린트 이벤트와 변수 기초를 익히는 문서
+- `260402`: `Skeletal Mesh`, `Movement Component`, `Spring Arm`, `Camera`를 붙여 플레이어를 움직이고, `IA_Move`, `IA_Attack`, `BPBullet`, `Spawn Actor`로 공격 입력과 발사체 생성을 연결하는 문서
+- `260403`: `Block / Overlap / Ignore` 충돌 규칙, `Projectile Stop`, `Actor Tag`, `Timer`, `Trigger Box`, `Level Blueprint`를 이용해 맞았을 때 반응하고, 구분하고, 함정을 작동시키는 기초 문서
+- `260406`: `PlayerCharacter`, `Shinbi`, `DefaultGameMode`, `InputData`, `MappingContext`를 중심으로 플레이어를 블루프린트에서 C++ 구조로 옮기고 `Rotation`, `Jump`, `Attack` 입력을 연결하는 문서
+- `260407`: `AnimInstance`, `Animation Blueprint`, `Aim Offset`, `GroundLocomotion`, `Blend Space`, 점프 상태 머신을 이용해 플레이어의 이동 속도와 시선 값을 자연스러운 애니메이션으로 바꾸는 문서
+- `260408`: `AnimMontage`, `Slot`, `Notify`, `Combo Section`, `PlayerAnimInstance`, `Animation Template`를 이용해 공격 모션, 콤보 입력 타이밍, 전투 애니메이션 재생 구조를 만드는 문서
+- `260409`: `PlayerTemplateAnimInstance`, 충돌 채널과 프로파일, `Sweep`, `TakeDamage`, 파티클, 사운드, 투사체를 묶어 실제 공격 판정과 피격 반응이 있는 플레이어 전투 파이프라인을 만드는 문서
+- `260414`: `MonsterBase`, `AIController`, `AIPerception`, `Behavior Tree`, `Blackboard`, `MonsterState`, `DataTable`, `AssetManager`를 이용해 몬스터 AI의 본체, 감지, 판단, 데이터 관리 기반을 세우는 문서
+- `260415`: `SpawnPoint`, `PatrolPath`, `Behavior Tree` 등록, `Perception`, `Move To`를 이용해 몬스터가 월드에 생성되고 순찰하다가 플레이어를 보면 추적하도록 만드는 문서
+- `260416`: `MonsterAnimInstance`, `MonsterTrace Task`, `MonsterAttack Task`, `AnimNotify` 기반 전투 루프를 이용해 추적에서 공격으로 넘어가고 타격 시점을 맞추는 몬스터 전투 문서
+- `260417`: `Monster Wait Task`, `Monster Patrol Task`, 엔진/에디터 버그 수정 사례를 통해 몬스터가 비전투 상태에서 대기하고 순찰하는 루프를 만들고, 순찰이 꼬일 때 어떻게 디버깅하는지 다루는 문서
+- `260420`: `Monster Death`, `AnimNotify_Death`, `Ragdoll`, `Physics Asset`, `ItemBox`, `Drop Animation`, `Overlap Pickup`을 묶어 몬스터 사망 이후 쓰러짐, 드롭, 획득까지 마무리하는 문서
 
 ## 저장소 구조
 

@@ -1,17 +1,18 @@
 ---
-title: 260402 플레이어 블루프린트와 발사체 기초
+title: 260402 플레이어를 움직이고 카메라를 붙이고 공격 입력으로 총알을 생성하는 블루프린트 기초
 ---
 
-# 260402 플레이어 블루프린트와 발사체 기초
+# 260402 플레이어를 움직이고 카메라를 붙이고 공격 입력으로 총알을 생성하는 블루프린트 기초
 
 ## 문서 개요
 
 이 문서는 `260402_1_이동 컴포넌트`, `260402_2_플레이어 제작`, `260402_3_액터 스폰과 회전`, `260402_3_액터 스폰과 회전_2`를 하나의 연속된 교재로 다시 정리한 것이다.
 이번 날짜의 핵심은 언리얼의 기본 컴포넌트를 손에 익히고, 블루프린트 플레이어를 직접 만들고, 마지막으로 입력을 받아 발사체를 스폰하는 가장 기초적인 액션 게임 루프를 완성하는 데 있다.
+그리고 이번 정리본에서는 여기에 더해, 현재 프로젝트 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252` 안의 실제 C++ 코드를 함께 읽으면서 `Spring Arm`, `Camera`, `Enhanced Input`, 발사체 스폰 개념이 소스에서 어떤 모습으로 이어지는지도 자세히 연결한다.
 
 강의 흐름을 한 줄로 요약하면 다음과 같다.
 
-`Movement Component 이해 -> BPPlayer와 숄더뷰 카메라 제작 -> IA_Attack / BPBullet / Spawn Actor`
+`Movement Component 이해 -> BPPlayer와 숄더뷰 카메라 제작 -> IA_Attack / BPBullet / Spawn Actor -> 실제 C++ 코드로 다시 읽기`
 
 즉 `260402`는 이후의 전투, 충돌, 애니메이션, AI 강의보다 훨씬 앞단에 있는 “조작 가능한 캐릭터와 간단한 액터 생성”의 출발점이다.
 아직 화려한 전투 시스템은 없지만, 이 날짜에서 배우는 컴포넌트 감각이 있어야 뒤에서 나오는 충돌 판정, 투사체, 스킬, 몬스터 스폰 구조도 자연스럽게 읽힌다.
@@ -21,23 +22,26 @@ title: 260402 플레이어 블루프린트와 발사체 기초
 - `D:\UE_Academy_Stduy_compressed`의 원본 영상과 자막
 - 원본 MP4에서 다시 추출한 대표 장면 캡처
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 C++ 소스
+- `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility`에 덤프한 `BPPlayer`, `BPBullet`, `IMC_Default`, `IA_Move`, `IA_Rotation`, `IA_Attack`, `PlayerCharacter`, `InputData`, `WraithBullet` 자료
 
 ## 학습 목표
 
 - `Static Mesh`와 `Skeletal Mesh`의 차이를 실제 플레이어 제작 관점에서 설명할 수 있다.
 - `Floating Pawn Movement`, `Projectile Movement`, `Rotating Movement`, `InterpTo Movement`의 쓰임을 구분할 수 있다.
 - `Spring Arm`과 `Camera`를 이용해 숄더뷰 플레이어 시점을 만드는 이유를 설명할 수 있다.
-- `Enhanced Input`의 `Mapping Context`와 `IA_Move`, `IA_Attack`가 블루프린트 조작 루프에서 어떤 역할을 하는지 말할 수 있다.
+- `Enhanced Input`의 `Mapping Context`와 `IA_Move`, `IA_Rotation`, `IA_Attack`가 블루프린트 조작 루프에서 어떤 역할을 하는지 말할 수 있다.
 - 메시를 직접 쏘는 대신 별도 액터인 `BPBullet`을 만들어 `Spawn Actor`와 `Projectile Movement`로 발사하는 구조를 정리할 수 있다.
 - `Location`, `Rotation`, `Forward Vector`를 조합해 발사체 생성 방향을 제어하는 기본 원리를 설명할 수 있다.
+- `APlayerCharacter`, `UDefaultInputData`, `ATestBullet`, `AProjectileBase`, `AWraithBullet` 코드를 보고 `260402` 개념이 실제 C++에서 어떻게 보이는지 읽을 수 있다.
 
 ## 강의 흐름 요약
 
 1. 에셋을 가져오고, `Skeletal Mesh`와 여러 `Movement Component`를 비교하면서 “움직이는 액터”를 만드는 언리얼 기본 문법을 익힌다.
 2. `BPPlayer`를 만들고 `Spring Arm`과 `Camera`를 붙여 액션 게임용 숄더뷰 시점을 만든다.
-3. `IMC_Default`, `IA_Move`, `IA_Attack`를 연결해 입력 자산과 블루프린트 이벤트 그래프를 묶는다.
+3. `IMC_Shoot` 또는 `IMC_Default`, `IA_Move`, `IA_Rotation`, `IA_Attack`를 연결해 입력 자산과 블루프린트 이벤트 그래프를 묶는다.
 4. 총알은 메시 컴포넌트를 직접 날리는 대신 별도 액터 `BPBullet`로 만들고, 여기에 `Projectile Movement`를 붙여 발사체처럼 움직이게 한다.
 5. 마지막으로 `Spawn Actor from Class`와 `Transform` 계산을 이용해, 플레이어가 보는 방향 앞쪽으로 발사체를 생성한다.
+6. 현재 프로젝트의 C++ 코드를 읽으며, 위 구조가 `PlayerCharacter`, `InputData`, `TestBullet`, `ProjectileBase`, `WraithBullet` 안에서 어떻게 구현되는지 확인한다.
 
 ---
 
@@ -101,6 +105,10 @@ mMovement->SetUpdatedComponent(mBody);
 이 코드는 나중 날짜의 몬스터 AI 강의에 나오지만, 개념 자체는 이미 `260402`에서 설명한 이동 컴포넌트 철학과 같다.
 즉 컴포넌트는 “나중에 붙이는 편의 기능”이 아니라, 액터의 움직임 성격을 정하는 핵심 설계 요소다.
 
+실제 덤프된 `BPBullet`도 같은 철학을 보여 준다.
+이 블루프린트는 `Actor`를 부모로 두고, 컴포넌트는 `StaticMesh`와 `ProjectileMovement` 중심으로 구성되어 있다.
+즉 강의에서 말하는 “총알은 별도 액터로 만들고, 움직임은 전용 이동 컴포넌트에 맡긴다”는 원칙이 현재 프로젝트 자산에도 그대로 남아 있다.
+
 ### 1.5 카메라와 스프링암도 결국 플레이어용 컴포넌트 조합이다
 
 첫 강의 후반부는 카메라와 `Spring Arm`을 미리 보여 준다.
@@ -158,13 +166,16 @@ mCamera->SetupAttachment(mSpringArm);
 즉 `260402`에서 배우는 숄더뷰는 일회성 블루프린트 트릭이 아니다.
 뒤의 `260406` C++ 전환 파트에서도 그대로 살아남는 플레이어 시점의 기본 설계다.
 
+덤프 기준으로 봐도 `BPPlayer`는 부모가 `Character`이고, 상속된 `CapsuleComponent`, `CharacterMovement`, `Mesh` 위에 `SpringArm`과 `Camera`를 추가한 구조다.
+즉 숄더뷰 카메라는 “카메라 하나를 붙였다”가 아니라, `Character` 기본 부품 위에 시점용 컴포넌트를 얹는 정석 패턴이라고 볼 수 있다.
+
 ![BPPlayer 컴포넌트와 Spring Arm 설정](./assets/images/bpplayer-components.jpg)
 
 ### 2.3 Enhanced Input은 입력을 “키 하나”가 아니라 “액션 자산”으로 다루게 만든다
 
 강의 중반부는 `Enhanced Input` 설정으로 넘어간다.
 초보자 입장에서는 이 부분이 복잡해 보일 수 있지만, 핵심은 단순하다.
-입력을 곧바로 키보드 버튼과 연결하지 않고, 먼저 `IA_Move`, `IA_Attack` 같은 `Input Action` 자산을 만들고 이를 `Mapping Context`에 넣는 것이다.
+입력을 곧바로 키보드 버튼과 연결하지 않고, 먼저 `IA_Move`, `IA_Rotation`, `IA_Attack` 같은 `Input Action` 자산을 만들고 이를 `Mapping Context`에 넣는 것이다.
 
 이 방식의 장점은 크다.
 
@@ -174,13 +185,18 @@ mCamera->SetupAttachment(mSpringArm);
 
 즉 `Enhanced Input`은 “입력 이벤트를 더 복잡하게 만드는 시스템”이 아니라, 입력을 장기적으로 관리하기 좋게 만드는 체계다.
 
+다만 현재 저장소를 덤프로 확인해 보면, 블루프린트 프로토타입과 후속 C++ 정리본 사이에는 이름 차이가 조금 있다.
+`BPPlayer` 그래프는 `BeginPlay`에서 `IMC_Shoot`를 직접 등록하고, 그 안에서 `IA_Move`, `IA_Rotation`, `IA_Attack`를 사용한다.
+반면 현재 C++ 구조의 `UDefaultInputData`는 `IMC_Default`를 로딩하고, 여기에 `IA_Move`, `IA_Rotation`, `IA_Jump`, `IA_Attack`, `IA_Skill1`를 묶는다.
+즉 매핑 컨텍스트의 자산 이름과 포함 범위는 발전 과정에서 달라졌지만, “입력을 액션 자산과 매핑 컨텍스트로 관리한다”는 핵심 발상은 그대로 유지된다.
+
 ![Enhanced Input Mapping Context 등록 화면](./assets/images/enhanced-input-mapping-context.jpg)
 
-### 2.4 IA_Move는 플레이어 이동의 가장 작은 단위다
+### 2.4 IA_Move와 IA_Rotation은 이동과 시선 제어를 나누는 기본 쌍이다
 
 자막 후반에서는 `IA_Move`를 실제 키에 연결하고 이벤트 그래프에서 받는 흐름을 보여 준다.
-이 파트의 의의는 단순히 “WASD를 연결했다”가 아니다.
-중요한 것은 플레이어 이동이 이제 프로젝트 전역에서 재사용 가능한 입력 액션으로 이름 붙었다는 점이다.
+하지만 현재 덤프 기준으로 보면, 여기서 중요한 것은 이동만 따로 떼어 보는 것이 아니라 `IA_Move`와 `IA_Rotation`이 한 쌍으로 작동한다는 점이다.
+플레이어는 걷고, 동시에 시선을 돌리고, 그 방향을 기준으로 공격까지 연결해야 하기 때문이다.
 
 현재 C++ 구조에서도 그 흔적이 명확하다.
 `UDefaultInputData`는 `IA_Move`를 로딩해 `"Move"`라는 키로 보관하고, `APlayerCharacter`는 그 액션을 찾아 `MoveKey()`에 바인딩한다.
@@ -200,40 +216,42 @@ Input->BindAction(InputData->FindAction(TEXT("Move")), ETriggerEvent::Triggered,
     this, &APlayerCharacter::MoveKey);
 ```
 
-즉 블루프린트 시절에 만든 `IA_Move`는 나중에 사라지는 임시 자산이 아니라, C++ 플레이어 시스템으로 이어지는 공용 입력 인터페이스가 된다.
+같은 방식으로 `IA_Rotation`도 별도 액션으로 바인딩된다.
+
+```cpp
+Input->BindAction(InputData->FindAction(TEXT("Rotation")), ETriggerEvent::Triggered,
+    this, &APlayerCharacter::RotationKey);
+```
+
+`IMC_Default` 덤프를 보면 이 분리가 더 분명하다.
+
+- `W`, `S`, `A`, `D`는 `IA_Move`
+- `MouseX`, `MouseY`는 `IA_Rotation`
+- `LeftMouseButton`은 `IA_Attack`
+
+즉 블루프린트 시절에 만든 입력 액션들은 나중에 사라지는 임시 자산이 아니라, C++ 플레이어 시스템으로 이어지는 공용 입력 인터페이스가 된다.
 
 ![IA_Move 입력 매핑 화면](./assets/images/ia-move-mapping.jpg)
 
 ### 2.5 Move 입력은 “전진”과 “회전”을 어떻게 나눌 것인가의 문제로 이어진다
 
-초기 플레이어 제작에서는 보통 이동과 회전을 같은 축에서 다루는 경우가 많다.
-강의에서도 전진과 방향 전환을 어떻게 섞을지 실험하는 흐름이 보인다.
-현재 소스를 보면 이 구조가 조금 더 정리된 형태로 남아 있다.
+현재 `BPPlayer` 덤프를 보면, 프로토타입 블루프린트는 생각보다 정석적인 2D 이동 구조를 갖고 있다.
+`IA_Move`의 `Vector2D` 입력을 `Break Vector2D`로 나눈 뒤, `GetActorForwardVector * X`와 `GetActorRightVector * Y`를 더하고 `Normalize`해서 `AddMovementInput`에 넣는다.
+즉 블루프린트 단계의 플레이어는 “전후좌우 방향 벡터를 합쳐 이동하는 구조”에 가깝다.
 
-```cpp
-void APlayerCharacter::MoveKey(const FInputActionValue& Value)
-{
-    FVector Axis = Value.Get<FVector>();
+회전은 별도 `IA_Rotation` 액션으로 분리되어 있고, 이 입력은 `AddControllerYawInput`으로 연결된다.
+즉 최소한의 액션 게임 플레이어라도 “이동 벡터”와 “시선/회전 입력”을 분리해서 생각하는 편이 훨씬 읽기 쉽다.
 
-    AddMovementInput(GetActorForwardVector(), Axis.X);
-    AddControllerYawInput(Axis.Y);
-}
-```
-
-이 구현은 매우 초반형 액션 게임 조작 구조다.
-
-- `Axis.X`: 현재 바라보는 방향으로 전진
-- `Axis.Y`: 몸체 회전
-
-즉 완전한 자유 이동보다, “앞을 보며 전진하고 좌우로 방향을 돌리는” 구조에 가깝다.
-강의에서 숄더뷰 카메라를 강조한 이유도 여기에 있다.
-이 시점은 이런 조작 방식과 잘 어울린다.
+현재 `APlayerCharacter` C++는 이 프로토타입을 바탕으로 한 차례 더 실험된 형태다.
+`MoveKey()`는 현재 바라보는 방향 전진과 yaw 입력을 일부 함께 처리하고, `RotationKey()`는 `SpringArm` 회전과 애님 인스턴스의 시선 값 갱신을 담당한다.
+흥미로운 점은 `MoveKey()` 안에 예전 프로토타입 방식인 `Forward * X + Right * Y` 코드가 주석으로 남아 있다는 점이다.
+즉 저장소의 현재 코드는 `260402` 실습이 굳어진 최종 답이라기보다, 숄더뷰 액션 조작을 여러 방식으로 다듬어 가는 과정으로 읽는 편이 더 정확하다.
 
 ### 2.6 BPPlayer는 나중에 PlayerCharacter로 옮겨 가는 중간 단계다
 
 두 번째 강의를 복습할 때 중요한 태도는, `BPPlayer`를 완성품으로 보지 않는 것이다.
 이 블루프린트는 플레이어 구조를 빠르게 실험하는 매우 좋은 중간 단계다.
-컴포넌트 배치, 카메라 거리, 입력 자산 연결을 먼저 손으로 체득한 다음, 뒤의 `260406`에서 그 내용을 `APlayerCharacter`와 `UDefaultInputData`로 옮기는 흐름이 훨씬 자연스럽다.
+컴포넌트 배치, 카메라 거리, 입력 자산 연결을 먼저 손으로 체득한 다음, 뒤의 `260406`에서 그 내용을 `APlayerCharacter`와 `UDefaultInputData`로 옮기고 조작 구조를 다시 다듬는 흐름이 훨씬 자연스럽다.
 
 즉 `BPPlayer`는 버려지는 프로토타입이 아니라, C++ 구조를 이해하기 위한 선행 실습이다.
 
@@ -277,7 +295,12 @@ void APlayerCharacter::MoveKey(const FInputActionValue& Value)
 강의는 `BPBullet`에 `Projectile Movement`를 붙여 가장 빠르게 발사체를 완성한다.
 직접 Tick에서 위치를 갱신하지 않고, 언리얼이 제공하는 발사체 전용 이동 규칙을 그대로 활용하는 방식이다.
 
-현재 프로젝트의 가장 얇은 예제는 `ATestBullet`이다.
+현재 덤프된 `BPBullet`도 이 원리를 잘 보여 준다.
+부모는 `Actor`이고, 컴포넌트는 `StaticMesh`와 `ProjectileMovement`로 단순하게 구성되어 있다.
+다만 지금 저장소의 `BPBullet`은 이미 한 단계 더 발전해 있어서, `OnProjectileStop` 이벤트에서 `ApplyDamage`를 호출하고 마지막에 `DestroyActor`까지 수행한다.
+즉 교재의 원래 맥락은 “날아가는 총알 만들기”지만, 현재 프로젝트 자산은 그 위에 최소한의 히트 처리까지 얹힌 상태라고 보는 편이 맞다.
+
+그보다 더 얇은 C++ 예제는 `ATestBullet`이다.
 
 ```cpp
 mMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
@@ -289,7 +312,7 @@ mMovement->ProjectileGravityScale = 0.f;
 mMovement->InitialSpeed = 1000.f;
 ```
 
-이 코드는 강의에서 블루프린트로 붙이던 `Projectile Movement`의 C++ 대응 예시다.
+이 코드는 강의에서 블루프린트로 붙이던 `Projectile Movement`의 가장 얇은 C++ 대응 예시다.
 중력 비율을 `0`으로 두면 직선 발사체에 가깝고, 초기 속도를 올리면 더 빠르게 날아간다.
 즉 `260402`의 총알은 단순한 장난감 오브젝트가 아니라, 뒤의 `260403`, `260409` 전투 시스템으로 이어질 투사체의 원형이다.
 
@@ -320,6 +343,7 @@ mMovement->InitialSpeed = 1000.f;
 ### 3.5 현재 PlayerCharacter 소스에는 초기 발사 실험 흔적이 그대로 남아 있다
 
 흥미로운 점은, 지금 프로젝트의 `APlayerCharacter::AttackKey()` 안에 이 강의의 실습 흔적이 주석으로 남아 있다는 것이다.
+현재 함수 본체는 `InputAttack()`만 호출하지만, 바로 아래 주석이 `260402`식 발사체 스폰 프로토타입을 거의 그대로 보존하고 있다.
 
 ```cpp
 FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 150.f;
@@ -362,7 +386,7 @@ mArrowComponent->SetupAttachment(mBody);
 
 ![Forward 방향과 Arrow 기준을 확인하는 장면](./assets/images/pawn-forward-arrow.jpg)
 
-### 3.7 ProjectileBase는 이후 충돌 처리까지 확장되는 발사체 베이스의 예고편이다
+### 3.7 BPBullet은 이후 ProjectileBase와 WraithBullet로 확장되는 출발점이다
 
 현재 소스의 `AProjectileBase`를 보면 `Projectile Movement`에 `OnProjectileStop` 이벤트를 연결해 두고 있다.
 
@@ -377,7 +401,10 @@ mMovement->OnProjectileStop.AddDynamic(this, &AProjectileBase::ProjectileStop);
 
 이 구조는 `260402`의 연장선에서 보면 아주 자연스럽다.
 이번 날짜가 “발사체를 스폰해서 날리는 법”을 배웠다면, 다음 날짜들은 여기에 충돌, 파티클, 사운드, 데미지를 덧붙이는 식으로 발전하기 때문이다.
-즉 `260402`의 총알은 이후 전투 파이프라인의 씨앗이다.
+
+실제 현재 프로젝트의 `AWraithBullet`는 그 확장 결과를 잘 보여 준다.
+`AProjectileBase`를 상속받아 파티클, 히트 사운드, 데칼, 충돌 프로파일을 붙이고, `BulletHit()`에서 연출까지 처리한다.
+즉 `260402`의 총알은 이후 전투 파이프라인의 씨앗이고, `BPBullet -> AProjectileBase -> AWraithBullet`로 이어지는 구조가 그 성장 경로라고 볼 수 있다.
 
 ![컴포넌트 기반 발사체와 Projectile Movement 미리보기](./assets/images/projectile-from-component.jpg)
 
@@ -389,10 +416,392 @@ mMovement->OnProjectileStop.AddDynamic(this, &AProjectileBase::ProjectileStop);
 
 ---
 
+## 제4장. 현재 프로젝트 C++ 코드로 다시 읽는 260402 핵심 구조
+
+### 4.1 왜 260402부터 C++ 코드를 같이 보는가
+
+`260402`는 원래 블루프린트 실습 비중이 높은 날이지만, 지금 프로젝트는 그 실습 결과가 이미 C++ 구조로 많이 옮겨져 있다.
+그래서 이 시점부터 실제 소스를 같이 보면 “블루프린트에서 손으로 하던 일”이 나중에 어떤 코드로 굳는지 훨씬 빨리 감이 잡힌다.
+
+아래 코드는 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 구현에서 핵심 부분만 추려 온 뒤, 초보자도 읽을 수 있게 설명용 주석을 보강한 축약판이다.
+즉 이 장은 새 기능을 배우는 장이라기보다, 이미 배운 `Spring Arm`, `Camera`, 입력 자산, 발사체 스폰 개념을 실제 소스에서 다시 확인하는 장이라고 보면 된다.
+
+### 4.2 `APlayerCharacter` 생성자: 숄더뷰 카메라와 기본 점프 세팅이 실제로는 이렇게 조립된다
+
+블루프린트에서 `BPPlayer`에 `Spring Arm`과 `Camera`를 붙였던 구조는, 현재 C++에서는 `APlayerCharacter` 생성자에서 그대로 만들어진다.
+
+```cpp
+APlayerCharacter::APlayerCharacter()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // 카메라를 캐릭터 뒤에 띄워 줄 팔 역할의 컴포넌트
+    mSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Arm"));
+
+    // 이 SpringArm은 플레이어 메시를 기준으로 같이 움직인다
+    mSpringArm->SetupAttachment(GetMesh());
+
+    // 카메라 거리
+    mSpringArm->TargetArmLength = 200.f;
+
+    // 카메라 시작 위치와 회전
+    mSpringArm->SetRelativeLocation(FVector(0.0, 0.0, 150.0));
+    mSpringArm->SetRelativeRotation(FRotator(-10.0, 90.0, 0.0));
+
+    // 실제 화면을 보는 카메라
+    mCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+    mCamera->SetupAttachment(mSpringArm);
+
+    // 컨트롤러가 돌면 플레이어도 같이 yaw를 따라간다
+    bUseControllerRotationYaw = true;
+
+    // 점프 높이
+    GetCharacterMovement()->JumpZVelocity = 700.f;
+
+    // 메시 자체는 충돌을 끄고, 실제 몸통 충돌은 캡슐이 맡는다
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    GetCapsuleComponent()->SetCollisionProfileName(TEXT("Player"));
+}
+```
+
+이 코드는 `260402`의 핵심 개념을 한 번에 보여 준다.
+
+- `Character` 기본 부품 위에 `SpringArm`과 `Camera`를 올린다.
+- 카메라 거리와 각도는 생성자에서 미리 정해 둔다.
+- 점프나 충돌처럼 플레이어의 기본 성격도 여기서 잡는다.
+
+즉 블루프린트에서 하던 “컴포넌트 추가 + 디테일 패널 값 조절”이, C++에서는 이렇게 생성자 코드로 굳어진다.
+
+### 4.3 `UDefaultInputData`: Enhanced Input 자산을 코드가 직접 로드하는 방식
+
+블루프린트 단계에서는 `IA_Move`, `IA_Rotation`, `IA_Attack`를 자산으로 만들고 `Mapping Context`에 넣는 감각을 익혔다.
+현재 C++ 프로젝트는 이 입력 자산 묶음을 `UDefaultInputData`라는 객체로 정리한다.
+
+```cpp
+UDefaultInputData::UDefaultInputData()
+{
+    static ConstructorHelpers::FObjectFinder<UInputMappingContext> InputContext(
+        TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Input/IMC_Default.IMC_Default'")
+    );
+
+    if (InputContext.Succeeded())
+        mContext = InputContext.Object;
+
+    static ConstructorHelpers::FObjectFinder<UInputAction> MoveAction(
+        TEXT("/Script/EnhancedInput.InputAction'/Game/Input/IA_Move.IA_Move'")
+    );
+    if (MoveAction.Succeeded())
+        mActions.Add(TEXT("Move"), MoveAction.Object);
+
+    static ConstructorHelpers::FObjectFinder<UInputAction> RotationAction(
+        TEXT("/Script/EnhancedInput.InputAction'/Game/Input/IA_Rotation.IA_Rotation'")
+    );
+    if (RotationAction.Succeeded())
+        mActions.Add(TEXT("Rotation"), RotationAction.Object);
+
+    static ConstructorHelpers::FObjectFinder<UInputAction> AttackAction(
+        TEXT("/Script/EnhancedInput.InputAction'/Game/Input/IA_Attack.IA_Attack'")
+    );
+    if (AttackAction.Succeeded())
+        mActions.Add(TEXT("Attack"), AttackAction.Object);
+}
+```
+
+초보자용으로 풀면 이렇다.
+
+- `IMC_Default`라는 입력 세트를 로드한다.
+- 그 안에서 `Move`, `Rotation`, `Attack` 같은 액션을 이름표와 함께 보관한다.
+- 나중에 플레이어 클래스는 `"Move"`, `"Attack"` 같은 이름으로 이 액션을 다시 찾아 쓴다.
+
+즉 `Enhanced Input`을 쓴다는 말은 단지 키 입력을 받는 것이 아니라, “입력 자산 묶음”을 코드나 블루프린트에서 공통으로 참조할 수 있게 만든다는 뜻이다.
+
+### 4.4 `BeginPlay`와 `SetupPlayerInputComponent`: 입력 세트를 등록하고 실제 함수에 묶는 단계
+
+입력 자산을 준비해 뒀다면, 플레이어는 게임 시작 때 그 매핑 컨텍스트를 등록하고 실제 함수에 액션을 묶어야 한다.
+`APlayerCharacter`는 그 흐름을 `BeginPlay()`와 `SetupPlayerInputComponent()`로 나눠 처리한다.
+
+```cpp
+void APlayerCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+
+    mAnimInst = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+
+    TObjectPtr<APlayerController> PlayerController = GetController<APlayerController>();
+
+    if (IsValid(PlayerController))
+    {
+        TObjectPtr<UEnhancedInputLocalPlayerSubsystem> Subsystem =
+            ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
+                PlayerController->GetLocalPlayer()
+            );
+
+        const UDefaultInputData* InputData = GetDefault<UDefaultInputData>();
+
+        // "이 플레이어는 IMC_Default 입력 세트를 사용한다"라고 등록
+        Subsystem->AddMappingContext(InputData->mContext, 0);
+    }
+}
+```
+
+그리고 실제 키 입력과 함수 연결은 이렇게 이뤄진다.
+
+```cpp
+void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+    TObjectPtr<UEnhancedInputComponent> Input =
+        Cast<UEnhancedInputComponent>(PlayerInputComponent);
+
+    if (IsValid(Input))
+    {
+        const UDefaultInputData* InputData = GetDefault<UDefaultInputData>();
+
+        Input->BindAction(InputData->FindAction(TEXT("Move")),
+            ETriggerEvent::Triggered, this, &APlayerCharacter::MoveKey);
+
+        Input->BindAction(InputData->FindAction(TEXT("Rotation")),
+            ETriggerEvent::Triggered, this, &APlayerCharacter::RotationKey);
+
+        Input->BindAction(InputData->FindAction(TEXT("Attack")),
+            ETriggerEvent::Started, this, &APlayerCharacter::AttackKey);
+    }
+}
+```
+
+이 두 함수를 한 줄로 요약하면 이렇다.
+
+- `BeginPlay`: 어떤 입력 세트를 쓸지 등록
+- `SetupPlayerInputComponent`: 그 입력이 들어왔을 때 무슨 함수를 부를지 연결
+
+즉 블루프린트에서 `IA_Move` 이벤트 노드를 끌어다 쓰던 감각이, C++에서는 `BindAction`으로 대응된다고 보면 된다.
+
+### 4.5 `MoveKey`와 `RotationKey`: 이동과 시점을 분리해서 읽는 법
+
+현재 `APlayerCharacter`에서 이동과 회전 함수는 다음처럼 구현되어 있다.
+
+```cpp
+void APlayerCharacter::MoveKey(const FInputActionValue& Value)
+{
+    FVector Axis = Value.Get<FVector>();
+
+    // 앞뒤 입력은 현재 바라보는 방향 기준 이동
+    AddMovementInput(GetActorForwardVector(), Axis.X);
+
+    // 좌우 입력은 현재 구현에선 몸 회전으로 사용
+    AddControllerYawInput(Axis.Y);
+}
+
+void APlayerCharacter::RotationKey(const FInputActionValue& Value)
+{
+    FVector Axis = Value.Get<FVector>();
+
+    // 마우스 입력으로 SpringArm 회전
+    mSpringArm->AddRelativeRotation(FRotator(Axis.Y, Axis.X, 0.0));
+
+    // 애니메이션 쪽 시선 값도 같이 갱신
+    mAnimInst->AddViewPitch(Axis.Y);
+    mAnimInst->AddViewYaw(Axis.X);
+}
+```
+
+이 코드를 읽을 때 중요한 포인트는 “현재 구현이 260402 프로토타입을 그대로 복사한 최종 정답은 아니다”는 점이다.
+실제로 `MoveKey()` 아래에는 예전 프로토타입 방식이 주석으로 남아 있다.
+
+```cpp
+/*FVector Forward = GetActorForwardVector();
+FVector Right = GetActorRightVector();
+
+FVector Dir = Forward * Axis.X + Right * Axis.Y;
+Dir.Normalize();
+
+AddMovementInput(Dir);*/
+```
+
+즉 현재 저장소는 두 가지 생각을 모두 보여 준다.
+
+- 블루프린트 프로토타입: `Forward * X + Right * Y` 방식의 정석적인 2D 이동
+- 현재 C++ 실험형: 전진 입력과 몸 회전을 더 강하게 분리한 숄더뷰 조작감
+
+이 차이를 이해하면, `260402`를 “고정된 정답”보다 “조작감을 실험하는 출발점”으로 읽기 쉬워진다.
+
+### 4.6 `AttackKey`와 `ATestBullet`: 공격 입력이 발사체 생성으로 이어지는 가장 얇은 C++ 예시
+
+`260402`의 핵심 중 하나는 공격 입력이 결국 `Spawn Actor` 문제라는 점이다.
+현재 `APlayerCharacter::AttackKey()`는 본체에서 `InputAttack()`만 호출하지만, 바로 아래에 첫 프로토타입 발사체 코드가 주석으로 남아 있다.
+
+```cpp
+void APlayerCharacter::AttackKey(const FInputActionValue& Value)
+{
+    InputAttack();
+
+    // FVector SpawnLoc = GetActorLocation() + GetActorForwardVector() * 150.f;
+    //
+    // FActorSpawnParameters param;
+    // param.SpawnCollisionHandlingOverride =
+    //     ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    //
+    // TObjectPtr<ATestBullet> Bullet =
+    //     GetWorld()->SpawnActor<ATestBullet>(SpawnLoc, GetActorRotation(), param);
+    //
+    // Bullet->SetLifeSpan(5.f);
+    // Bullet->Tags.Add(TEXT("PlayerBullet"));
+}
+```
+
+이 짧은 예시는 `260402`가 전달하려는 거의 모든 것을 담고 있다.
+
+- `GetActorLocation()`: 지금 플레이어가 있는 위치
+- `GetActorForwardVector() * 150.f`: 플레이어 앞쪽 오프셋
+- `GetActorRotation()`: 지금 플레이어가 보는 방향
+- `SpawnActor`: 별도 액터 생성
+- `SetLifeSpan`: 발사체 수명 지정
+
+즉 공격 입력은 “총을 쏜다”가 아니라, “플레이어 앞쪽 위치와 방향을 이용해 다른 액터를 생성한다”로 이해하는 편이 더 정확하다.
+
+실제로 그 프로토타입 총알 클래스는 `ATestBullet`에 아주 얇게 구현되어 있다.
+
+```cpp
+ATestBullet::ATestBullet()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    mMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+    SetRootComponent(mMesh);
+
+    mMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Movement"));
+    mMovement->SetUpdatedComponent(mMesh);
+
+    // 직선에 가까운 발사체로 만들기 위해 중력 제거
+    mMovement->ProjectileGravityScale = 0.f;
+
+    // 초당 초기 속도
+    mMovement->InitialSpeed = 1000.f;
+}
+```
+
+이 코드는 블루프린트 `BPBullet + ProjectileMovement` 조합을 C++로 가장 얇게 옮긴 예시라고 보면 된다.
+
+### 4.7 `AProjectileBase`와 `AWraithBullet`: 260402 발사체가 나중에 어디까지 자라나는가
+
+현재 저장소는 `260402`의 씨앗이 후속 날짜에서 어떻게 확장됐는지도 잘 보여 준다.
+우선 공통 발사체 베이스는 `AProjectileBase`다.
+
+```cpp
+AProjectileBase::AProjectileBase()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    mBody = CreateDefaultSubobject<UBoxComponent>(TEXT("Body"));
+    mMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Movement"));
+
+    SetRootComponent(mBody);
+    mMovement->SetUpdatedComponent(mBody);
+
+    // 발사체가 멈추면 후처리 함수 호출
+    mMovement->OnProjectileStop.AddDynamic(this, &AProjectileBase::ProjectileStop);
+}
+```
+
+즉 프로토타입 총알이 “메시 + ProjectileMovement”였다면, 이후엔 “공통 충돌체 + ProjectileMovement + 멈춤 이벤트”라는 더 확장 가능한 구조로 바뀐다.
+
+그리고 `AWraithBullet`는 그 위에 이펙트와 충돌 반응을 얹는다.
+
+```cpp
+AWraithBullet::AWraithBullet()
+{
+    mParticle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Particle"));
+    mParticle->SetupAttachment(mBody);
+
+    mBody->SetCollisionProfileName(TEXT("PlayerAttack"));
+    mBody->OnComponentHit.AddDynamic(this, &AWraithBullet::BulletHit);
+
+    mMovement->ProjectileGravityScale = 0.f;
+    mMovement->InitialSpeed = 1000.f;
+}
+```
+
+충돌 시에는 파티클, 사운드, 데칼까지 재생한다.
+
+```cpp
+void AWraithBullet::BulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+    UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    Destroy();
+
+    if (IsValid(mHitParticle))
+        UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), mHitParticle, Hit.ImpactPoint);
+
+    if (IsValid(mHitSound))
+        UGameplayStatics::SpawnSoundAtLocation(GetWorld(), mHitSound, Hit.ImpactPoint);
+}
+```
+
+즉 `260402`의 발사체는 여기서 끝나는 게 아니라 이런 성장 경로를 가진다.
+
+- `BPBullet`: 블루프린트 프로토타입
+- `ATestBullet`: 가장 얇은 C++ 총알
+- `AProjectileBase`: 공통 발사체 베이스
+- `AWraithBullet`: 히트 연출까지 붙은 실전형 발사체
+
+이 흐름을 이해하면 `260402`가 왜 이후 전투 파트의 바닥 문법인지 더 또렷하게 보인다.
+
+### 4.8 `AShinbi`: 현재 공격 입력이 왜 더 이상 단순 총알만 쏘지 않는가
+
+한 가지 주의할 점도 있다.
+현재 실제 플레이어 클래스인 `AShinbi`는 `InputAttack()`를 오버라이드해서, 단순 총알 스폰 대신 공격 애니메이션 재생이나 스킬 액터 생성을 수행한다.
+
+```cpp
+void AShinbi::InputAttack()
+{
+    if (IsValid(mMagicCircleActor))
+    {
+        mAnimInst->PlaySkill1();
+        mAnimInst->ClearSkill1();
+
+        FVector Loc = mMagicCircleActor->GetActorLocation() + FVector(0.0, 0.0, 1000.0);
+
+        FActorSpawnParameters param;
+        param.SpawnCollisionHandlingOverride =
+            ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+        TObjectPtr<AGeometryActor> SkillActor =
+            GetWorld()->SpawnActor<AGeometryActor>(Loc, FRotator::ZeroRotator, param);
+
+        mMagicCircleActor->Destroy();
+    }
+    else
+    {
+        mAnimInst->PlayAttack();
+    }
+}
+```
+
+이 코드는 `260402`의 핵심을 부정하는 게 아니라, 오히려 발전된 결과를 보여 준다.
+즉 공격 입력은 여전히 “무언가를 월드에 생성하거나 재생하는 것”과 연결되지만, 지금은 그 대상이 단순 총알뿐 아니라 스킬 액터나 애니메이션까지 넓어진 상태다.
+
+즉 `260402`는 단순 총알 강의가 아니라, “입력 -> 액터 생성 또는 공격 처리”라는 더 큰 구조의 첫 입문이라고 이해하는 편이 맞다.
+
+### 4.9 장 정리
+
+제4장의 결론은 `260402`에서 배운 블루프린트 실습이 현재 프로젝트 C++ 구조 속에도 거의 그대로 살아 있다는 점이다.
+
+- `APlayerCharacter` 생성자: `SpringArm + Camera` 숄더뷰 세팅
+- `UDefaultInputData`: `IA_Move`, `IA_Rotation`, `IA_Attack` 자산 관리
+- `SetupPlayerInputComponent`: 입력 액션과 실제 함수 연결
+- `AttackKey` 주석 코드: 발사체 생성의 원형
+- `ATestBullet`, `AProjectileBase`, `AWraithBullet`: 총알이 실전 투사체로 확장되는 과정
+
+즉 `260402`는 블루프린트 입문 장이면서 동시에, 이후 플레이어 C++ 구조와 전투 파이프라인으로 자라나는 가장 작은 씨앗이다.
+
+---
+
 ## 전체 정리
 
 `260402`는 초반 강의답게 내용이 단순해 보이지만, 실제로는 언리얼 게임플레이 제작의 기초 문법이 거의 다 들어 있다.
 첫 번째 장에서 메시와 이동 컴포넌트라는 기본 재료를 익히고, 두 번째 장에서 시점과 입력을 갖춘 `BPPlayer`를 만들고, 세 번째 장에서 액터 생성과 방향 계산을 이용해 발사체까지 연결한다.
+그리고 이번 정리본에서는 네 번째 장을 통해, 그 구조가 현재 `UE20252` C++ 코드에서 `PlayerCharacter`, `InputData`, `TestBullet`, `ProjectileBase`로 어떻게 굳어졌는지도 함께 읽는다.
 
 이 날짜를 이해하면 뒤의 강의들이 왜 자연스럽게 이어지는지도 보인다.
 
@@ -407,19 +816,22 @@ mMovement->OnProjectileStop.AddDynamic(this, &AProjectileBase::ProjectileStop);
 - `Static Mesh`와 `Skeletal Mesh`의 차이를 플레이어 제작 관점에서 설명할 수 있는가?
 - `Floating Pawn Movement`와 `Projectile Movement`가 각각 어떤 액터에 적합한지 구분할 수 있는가?
 - `Spring Arm + Camera` 조합이 왜 숄더뷰 플레이어에 유리한지 설명할 수 있는가?
-- `IA_Move`, `IA_Attack`, `Mapping Context`의 관계를 말할 수 있는가?
+- `IA_Move`, `IA_Rotation`, `IA_Attack`, `Mapping Context`의 관계를 말할 수 있는가?
 - 메시가 아닌 `BPBullet` 액터를 만들어야 하는 이유를 설명할 수 있는가?
 - `GetActorLocation() + GetActorForwardVector() * 거리`가 어떤 의미인지 이해했는가?
 - `Transform`을 위치와 회전으로 나눠 생각하는 이유를 설명할 수 있는가?
+- `APlayerCharacter`, `UDefaultInputData`, `ATestBullet`, `AProjectileBase` 코드를 보고 블루프린트 실습을 실제 C++ 구조와 연결할 수 있는가?
 
 ## 세미나 질문
 
 1. `BPPlayer` 단계에서 먼저 카메라와 입력을 실험해 본 뒤 `APlayerCharacter`로 옮기는 방식은 어떤 학습 장점을 주는가?
 2. 총알을 메시 컴포넌트가 아니라 별도 액터로 분리하는 선택은 이후 충돌과 수명, 이펙트 처리에 어떤 이점을 주는가?
-3. 플레이어 전진과 회전을 한 축 입력에서 함께 다루는 구조는 어떤 장단점을 가지며, 나중에 어떤 형태로 발전할 수 있을까?
+3. 프로토타입의 `IA_Move + IA_Rotation` 분리 구조와, 후속 C++에서 조작감을 다시 다듬는 구조는 각각 어떤 장단점을 가질까?
+4. `ATestBullet -> AProjectileBase -> AWraithBullet`처럼 공통 베이스를 만든 뒤 확장하는 방식은 왜 나중에 유리할까?
 
 ## 권장 과제
 
 1. `BPBullet` 대신 다른 메시를 가진 발사체를 하나 더 만든다고 가정하고, 무엇을 새 액터로 분리해야 하는지 적어 본다.
 2. `IA_Attack`에 오른쪽 마우스를 추가 매핑한다고 가정하고, 입력 자산과 이벤트 그래프에서 바뀌는 지점을 정리해 본다.
 3. 현재 `APlayerCharacter::AttackKey()`의 주석 코드를 기준으로, 발사 위치를 더 위쪽이나 더 오른쪽 어깨 쪽으로 옮기려면 어떤 값들을 조정해야 하는지 스스로 설명해 본다.
+4. `UDefaultInputData`, `APlayerCharacter`, `ATestBullet` 세 파일을 보고, “입력 자산 로드 -> 함수 바인딩 -> 발사체 생성” 흐름을 화살표로 직접 정리해 본다.

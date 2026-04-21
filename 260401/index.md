@@ -1,17 +1,18 @@
 ---
-title: 260401 언리얼 프로젝트와 블루프린트 입문
+title: 260401 언리얼 프로젝트를 처음 만들고 에디터 화면, 클래스 구조, 블루프린트 기초를 익히는 입문
 ---
 
-# 260401 언리얼 프로젝트와 블루프린트 입문
+# 260401 언리얼 프로젝트를 처음 만들고 에디터 화면, 클래스 구조, 블루프린트 기초를 익히는 입문
 
 ## 문서 개요
 
 이 문서는 `260401_1_언리얼 프로젝트 생성`, `260401_2_언리얼 에디터`, `260401_3_언리얼 클래스 구조와 블루프린트 클래스`, `260401_4_블루프린트 기초 프로그래밍`을 하나의 연속된 교재로 다시 정리한 것이다.
 이번 날짜의 핵심은 기능 구현보다 먼저, 언리얼 엔진이 어떤 단위로 프로젝트를 만들고, 에디터에서 그것을 어떻게 다루며, 클래스와 블루프린트가 어떤 관계를 가지는지 이해하는 데 있다.
+그리고 이번 정리본에서는 여기에 더해, 현재 프로젝트 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252` 안의 실제 C++ 코드를 함께 읽으면서 첫날 개념이 실전 소스에서 어떤 모습으로 나타나는지도 자세히 연결한다.
 
 강의 흐름을 한 줄로 요약하면 다음과 같다.
 
-`프로젝트 생성 규칙 -> 에디터 패널 읽기 -> UObject / Actor / Pawn / Character 구조 -> 블루프린트 기초 로직`
+`프로젝트 생성 규칙 -> 에디터 패널 읽기 -> UObject / Actor / Pawn / Character 구조 -> 블루프린트 기초 로직 -> 실제 C++ 코드로 다시 읽기`
 
 즉 `260401`은 뒤의 플레이어, 발사체, 충돌, AI 강의보다 먼저 읽혀야 하는 가장 바닥의 문법 정리다.
 이 날짜를 건너뛰면 블루프린트 노드만 따라칠 수는 있어도, 왜 어떤 기능은 `Actor`에 들어가고 어떤 기능은 `Component`에 들어가며, 왜 플레이어는 `Character`를 쓰고 어떤 적은 `Pawn`을 쓰는지 구조적으로 이해하기 어렵다.
@@ -21,6 +22,7 @@ title: 260401 언리얼 프로젝트와 블루프린트 입문
 - `D:\UE_Academy_Stduy_compressed`의 원본 영상과 자막
 - 원본 MP4에서 다시 추출한 대표 장면 캡처
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 C++ 소스
+- `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility`에 덤프한 `BPTestActor`, `BPTestMove`, `BPTestPlayer`, `BPMainGameMode`, `PlayerCharacter`, `MonsterBase`, `Shinbi` 자료
 
 ## 학습 목표
 
@@ -29,6 +31,7 @@ title: 260401 언리얼 프로젝트와 블루프린트 입문
 - `UObject`, `Actor`, `ActorComponent`, `SceneComponent`, `Pawn`, `Character`, `GameMode`, `PlayerController`의 관계를 큰 틀에서 정리할 수 있다.
 - 블루프린트 클래스가 “코드를 안 쓰는 대체재”가 아니라 언리얼의 클래스 시스템 위에서 동작하는 시각적 스크립팅이라는 점을 설명할 수 있다.
 - `BeginPlay`, `Tick`, 실행 핀, 데이터 핀, 변수, `Delta Seconds`, `AddActorWorldOffset`가 블루프린트 기초 프로그래밍에서 어떤 의미를 가지는지 이해할 수 있다.
+- `APlayerCharacter`, `AMonsterBase`, `ADefaultGameMode`, `AMainPlayerController`, `AShinbi` 코드를 보고 첫날 개념이 실제 C++에서 어떻게 보이는지 읽을 수 있다.
 
 ## 강의 흐름 요약
 
@@ -36,6 +39,7 @@ title: 260401 언리얼 프로젝트와 블루프린트 입문
 2. 에디터의 기본 패널과 조작 단축키를 익혀, 월드에 액터를 배치하고 수정하는 방법을 이해한다.
 3. `UObject`에서 시작해 `Actor`, `Component`, `Pawn`, `Character`, `GameMode`, `PlayerController`로 이어지는 언리얼 클래스 구조를 정리한다.
 4. 마지막으로 블루프린트에서 `Tick`과 변수, 이동 노드, `Delta Seconds`를 이용해 가장 기초적인 게임 로직 작성 방식을 배운다.
+5. 현재 프로젝트의 실제 C++ 코드를 읽으며, 위 개념들이 `UE20252` 소스 안에서 어떤 형태로 구현되어 있는지 확인한다.
 
 ---
 
@@ -88,6 +92,10 @@ title: 260401 언리얼 프로젝트와 블루프린트 입문
 DefaultPawnClass = AShinbi::StaticClass();
 PlayerControllerClass = AMainPlayerController::StaticClass();
 ```
+
+반대로 첫날 실습용 블루프린트 축에서는 `BPMainGameMode`가 같은 역할을 더 단순한 형태로 보여 준다.
+여기서는 기본 폰이 `BPTestPlayer`, 컨트롤러가 기본 `PlayerController`로 잡혀 있다.
+즉 `Blueprint`와 `C++`는 표현 방식이 다를 뿐, 월드 규칙을 정하고 기본 플레이어를 연결하는 책임 자체는 동일하다.
 
 즉 언리얼에서 `C++와 블루프린트`는 경쟁 관계가 아니라 역할 분담 관계다.
 
@@ -248,6 +256,11 @@ PlayerControllerClass = AMainPlayerController::StaticClass();
 즉 “화면에 보이는 것”이 모두 액터인 것도 아니고, “기능이 있는 것”이 모두 액터인 것도 아니다.
 액터는 월드의 단위이고, 컴포넌트는 그 내부 기능 단위다.
 
+이번 프로젝트의 테스트 블루프린트 덤프도 이 차이를 선명하게 보여 준다.
+`BPTestActor`는 `Actor` 기반 블루프린트로, `DefaultSceneRoot` 아래 여러 `StaticMeshComponent`를 두고 `Tick -> AddActorWorldOffset`으로 직접 이동을 만든다.
+반면 `BPTestMove`는 `ActorComponent` 기반 블루프린트로, `UpdateComponent`라는 `SceneComponent` 참조와 `Velocity` 변수를 받아 `Tick -> AddWorldOffset`을 수행한다.
+즉 같은 “계속 움직이기” 로직이라도 액터 자체에 넣을 수도 있고, 다른 액터에 꽂아 재사용하는 컴포넌트로 분리할 수도 있다는 뜻이다.
+
 ### 3.3 Pawn과 Character는 조종 가능성에 따라 갈라진다
 
 강의는 `Actor -> Pawn -> Character` 축도 차례대로 설명한다.
@@ -271,6 +284,10 @@ class UE20252_API AMonsterBase : public APawn,
 
 즉 강의에서 설명한 “플레이어는 보통 Character, 상황에 따라 Pawn도 쓸 수 있다”는 철학이 실제 프로젝트에도 그대로 반영되어 있다.
 플레이어는 캡슐, 메시, 점프, 입력 구조가 자연스러운 `Character`를 쓰고, 몬스터는 필요 기능을 직접 붙이는 `Pawn` 구조로 확장하고 있다.
+
+첫날 테스트 자산인 `BPTestPlayer`를 보면 이 설명이 더 직관적으로 보인다.
+이 블루프린트는 부모가 `Character`이고, 상속된 `CapsuleComponent`, `CharacterMovement`, `Mesh`를 이미 가지고 있으며, 여기에 `SpringArm`과 `Camera`를 추가해 바로 3인칭 플레이어 형태를 만들고 있다.
+즉 `Character`가 “무겁다”는 말은 불필요하다는 뜻이 아니라, 대신 처음부터 많은 이동용 기본 부품을 함께 들고 들어온다는 뜻에 가깝다.
 
 ### 3.4 Character는 편리하지만 무겁기 때문에 항상 정답은 아니다
 
@@ -301,6 +318,10 @@ class UE20252_API AMonsterBase : public APawn,
 DefaultPawnClass = AShinbi::StaticClass();
 PlayerControllerClass = AMainPlayerController::StaticClass();
 ```
+
+하지만 첫날 실습 축에서는 더 단순한 대응 예시도 함께 볼 수 있다.
+`BPMainGameMode` 덤프에서는 기본 폰이 `BPTestPlayer`, 기본 컨트롤러가 엔진 기본 `PlayerController`로 잡혀 있다.
+즉 첫날 문법 설명에서는 `BPMainGameMode -> BPTestPlayer` 조합으로 책임 분리를 먼저 이해하고, 이후 실제 프로젝트 확장판으로 `ADefaultGameMode -> AShinbi + AMainPlayerController` 구조를 보면 흐름이 더 자연스럽다.
 
 즉 `GameMode`는 이 월드에서 기본 플레이어가 누구인지, 기본 컨트롤러가 무엇인지를 정하는 규칙 계층이다.
 그리고 실제 조작 신호를 전달하는 주체는 `PlayerController`다.
@@ -382,6 +403,10 @@ virtual void BeginPlay() override;
 virtual void Tick(float DeltaTime) override;
 ```
 
+덤프 자료를 같이 보면 블루프린트 쪽도 같은 생명주기를 반복하고 있다는 점이 더 잘 보인다.
+`BPTestActor`, `BPTestMove`, `BPTestPlayer`, `BPMainGameMode` 모두 `BeginPlay`와 `Tick` 이벤트를 갖고 있고, C++ 쪽의 `APlayerCharacter`, `AMonsterBase`, `AShinbi`도 같은 이름의 함수를 오버라이드한다.
+즉 언리얼에서 실행 시점을 읽는 기본 문법은 블루프린트와 C++ 사이에서 거의 그대로 대응된다고 봐도 된다.
+
 즉 블루프린트와 C++는 도구가 다를 뿐, 이벤트 생명주기 자체는 동일하다.
 
 ### 4.3 실행 핀과 데이터 핀을 구분하면 노드가 읽히기 시작한다
@@ -408,6 +433,11 @@ virtual void Tick(float DeltaTime) override;
 이 사고는 뒤의 모든 실시간 게임플레이 로직으로 이어진다.
 움직임, 회전, 타이머, 보간 모두 결국 시간 축을 기준으로 생각해야 하기 때문이다.
 
+실제 테스트 덤프에서는 이 구조가 아주 노골적으로 보인다.
+`BPTestActor`는 `Tick`의 `Delta Seconds`에 `MoveSpeed`를 곱한 뒤 `Make Vector`를 거쳐 `AddActorWorldOffset`에 넣고, 이어서 회전에도 다시 `Delta Seconds`를 사용한다.
+`BPTestMove`는 같은 아이디어를 컴포넌트 버전으로 옮겨, `Delta Seconds * Velocity` 결과를 `UpdateComponent`의 `AddWorldOffset`에 전달한다.
+즉 첫날 실습의 진짜 핵심은 특정 노드 이름 암기가 아니라, “속도 x 시간 = 이번 프레임 이동량”이라는 사고를 몸에 익히는 데 있다.
+
 ### 4.5 변수는 상수를 치우고 조절 가능한 설계를 만드는 첫 단계다
 
 강의 중반은 하드코딩된 숫자를 변수로 바꾸는 흐름을 보여 준다.
@@ -422,6 +452,9 @@ virtual void Tick(float DeltaTime) override;
 - 스폰 시점 노출, 읽기 전용, 카테고리 정리 같은 메타 설정이 가능해진다
 
 즉 변수는 블루프린트가 “한 번 만든 데모”에서 “재사용 가능한 클래스”로 바뀌는 첫 단계다.
+
+이 점도 `BPTestActor`의 `MoveSpeed`, `BPTestMove`의 `Velocity`, `BPTestPlayer`의 `HP` 같은 테스트 자산 변수를 보면 감각이 더 빨리 온다.
+숫자를 노드에 직접 박아 넣는 대신 이름 붙은 변수로 빼 두면, 같은 그래프도 무엇을 조절하는지 읽기 쉬워지고 인스턴스별 실험도 쉬워진다.
 
 ### 4.6 인스턴스 편집 가능 변수는 에디터와 로직을 연결하는 다리다
 
@@ -461,10 +494,392 @@ virtual void Tick(float DeltaTime) override;
 
 ---
 
+## 제5장. 현재 프로젝트 C++ 코드로 다시 읽는 첫날 개념
+
+### 5.1 왜 첫날부터 실제 C++ 코드를 같이 보는가
+
+첫날 강의는 원래 블루프린트와 에디터 중심으로 진행되지만, 실제 프로젝트는 결국 C++ 클래스와 블루프린트 자산이 함께 굴러간다.
+그래서 지금부터 소스를 같이 읽어 두면, 뒤 날짜에서 갑자기 `PlayerCharacter.cpp`, `MonsterBase.cpp` 같은 파일이 등장해도 훨씬 덜 낯설다.
+
+아래 코드들은 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 소스에서 핵심 부분만 추려 온 뒤, 초보자도 읽을 수 있게 설명용 주석을 더한 축약판이다.
+즉 “지금 프로젝트가 실제로 이런 구조로 되어 있다”는 기준점으로 보면 된다.
+
+### 5.2 `APlayerCharacter`: Character가 왜 기본 부품이 많은 클래스인지 C++로 보면 더 잘 보인다
+
+먼저 플레이어 공통 베이스인 `APlayerCharacter`의 헤더를 보면, 이미 `ACharacter`를 상속하고 있다는 점이 가장 먼저 눈에 들어온다.
+
+```cpp
+UCLASS()
+class UE20252_API APlayerCharacter : public ACharacter,
+    public IGenericTeamAgentInterface
+{
+    GENERATED_BODY()
+
+protected:
+    // 카메라를 캐릭터 뒤에 띄워 주는 팔 역할
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+    TObjectPtr<USpringArmComponent> mSpringArm;
+
+    // 실제 화면을 보는 카메라
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCameraComponent> mCamera;
+
+    // 나중에 애니메이션 재생을 제어할 때 잡아 둘 애님 인스턴스
+    TObjectPtr<class UPlayerAnimInstance> mAnimInst;
+};
+```
+
+이 짧은 선언만 봐도 중요한 사실이 두 개 보인다.
+
+- 플레이어는 `Character` 기반이라서, 언리얼이 이미 `Capsule`, `Mesh`, `CharacterMovement` 같은 기본 부품을 갖고 시작한다.
+- 여기에 현재 프로젝트는 `SpringArm`, `Camera`만 추가해 3인칭 플레이어 구조를 만든다.
+
+즉 `Character`는 “캡슐, 메시, 이동 부품을 이미 갖고 들어오는 인간형 캐릭터용 베이스”라고 이해하면 된다.
+
+실제 생성자는 그 구조를 더 분명하게 보여 준다.
+
+```cpp
+APlayerCharacter::APlayerCharacter()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // 새 컴포넌트를 만든다. 생성자에서는 CreateDefaultSubobject를 사용한다.
+    mSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Arm"));
+
+    // SpringArm을 캐릭터 메시 밑에 붙인다.
+    // 즉 "플레이어 몸"을 기준으로 카메라 팔이 같이 움직이게 된다.
+    mSpringArm->SetupAttachment(GetMesh());
+
+    // 카메라와 캐릭터 사이 거리
+    mSpringArm->TargetArmLength = 200.f;
+
+    // 카메라 팔의 시작 위치와 회전
+    mSpringArm->SetRelativeLocation(FVector(0.0, 0.0, 150.0));
+    mSpringArm->SetRelativeRotation(FRotator(-10.0, 90.0, 0.0));
+
+    // 실제 카메라를 만들고 SpringArm 끝에 붙인다.
+    mCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+    mCamera->SetupAttachment(mSpringArm);
+
+    // 컨트롤러의 Yaw 회전을 캐릭터가 따라가게 한다.
+    bUseControllerRotationYaw = true;
+
+    // 점프 높이 설정
+    GetCharacterMovement()->JumpZVelocity = 700.f;
+
+    // 플레이어 몸통 충돌 프로파일 지정
+    GetCapsuleComponent()->SetCollisionProfileName(TEXT("Player"));
+
+    // 메시 자체는 충돌에서 제외
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+    SetGenericTeamId(FGenericTeamId(TeamPlayer));
+}
+```
+
+이 코드를 초보자 관점으로 번역하면 다음과 같다.
+
+- `ACharacter`는 이미 기본 몸체를 가지고 있다.
+- 우리는 그 위에 `카메라 팔`과 `카메라`를 얹는다.
+- 점프 높이, 충돌 프로파일, 팀 ID 같은 기본 성격도 생성자에서 정한다.
+
+즉 블루프린트에서 보던 `Capsule + Mesh + SpringArm + Camera` 조합이 사실은 C++ 생성자에서 이렇게 조립되고 있다는 뜻이다.
+
+### 5.3 `AMonsterBase`: Pawn은 필요한 부품을 더 직접 조립하는 쪽이다
+
+이번에는 몬스터 베이스를 보자.
+플레이어와 달리 몬스터는 `Character`가 아니라 `Pawn`을 상속한다.
+
+```cpp
+UCLASS()
+class UE20252_API AMonsterBase : public APawn,
+    public IGenericTeamAgentInterface,
+    public IMonsterState
+{
+    GENERATED_BODY()
+
+protected:
+    // 몬스터의 실제 몸통 충돌
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCapsuleComponent> mBody;
+
+    // 몬스터 외형 메시
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<USkeletalMeshComponent> mMesh;
+
+    // 이동 기능을 담당하는 컴포넌트
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UFloatingPawnMovement> mMovement;
+};
+```
+
+`APawn`은 `ACharacter`처럼 많은 기능을 기본으로 다 주지 않는다.
+그래서 몬스터는 “필요한 컴포넌트를 내가 직접 붙여서 만든다”는 느낌이 더 강하다.
+
+생성자도 이 점을 그대로 보여 준다.
+
+```cpp
+AMonsterBase::AMonsterBase()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // 몬스터의 기준 몸통 캡슐
+    mBody = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Body"));
+
+    // 외형 메시
+    mMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+
+    // 몸통 캡슐을 루트로 잡는다.
+    SetRootComponent(mBody);
+
+    // 메시를 몸통에 붙인다.
+    mMesh->SetupAttachment(mBody);
+
+    // 캡슐이 내비게이션 생성에 영향을 주지 않게 한다.
+    mBody->SetCanEverAffectNavigation(false);
+
+    // 메시는 충돌 제외, 실제 충돌은 Body가 맡는다.
+    mMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    mBody->SetCollisionProfileName(TEXT("Monster"));
+
+    // Pawn용 이동 컴포넌트를 직접 만든다.
+    mMovement = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("Movement"));
+    mMovement->SetUpdatedComponent(mBody);
+
+    // 이 Pawn을 어떤 AIController가 조종할지 지정한다.
+    AIControllerClass = AMonsterController::StaticClass();
+    AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+    SetGenericTeamId(FGenericTeamId(TeamMonster));
+    bUseControllerRotationYaw = true;
+}
+```
+
+이 코드를 보면 강의에서 왜 `Character`와 `Pawn`을 구분해서 설명했는지 바로 이해된다.
+
+- 플레이어 쪽 `Character`: 기본 이동 뼈대가 이미 준비되어 있다.
+- 몬스터 쪽 `Pawn`: 몸체, 메시, 이동 방식, AI 컨트롤러 연결까지 더 직접 조립한다.
+
+즉 `Pawn`은 더 가볍고 자유로운 대신, 필요한 부품을 더 많이 직접 준비해야 한다.
+
+### 5.4 `ADefaultGameMode`와 `AMainPlayerController`: 월드 규칙과 조종 주체를 실제 코드로 읽기
+
+강의에서 설명한 `GameMode`와 `PlayerController`의 분리도 현재 프로젝트 C++에서 아주 선명하게 드러난다.
+우선 `GameMode`는 이 맵의 기본 플레이어와 기본 컨트롤러가 누구인지 정한다.
+
+```cpp
+ADefaultGameMode::ADefaultGameMode()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // 이 맵에 들어오면 기본으로 어떤 Pawn을 줄지 정한다.
+    DefaultPawnClass = AShinbi::StaticClass();
+
+    // 그 Pawn을 누가 조종할지도 함께 정한다.
+    PlayerControllerClass = AMainPlayerController::StaticClass();
+}
+```
+
+이 코드는 “플레이어를 만들었다”보다 더 정확히는 “이 월드의 기본 규칙을 정했다”에 가깝다.
+즉 `GameMode`는 조종 대상과 조종 주체를 연결하는 월드 규칙 계층이다.
+
+컨트롤러 쪽을 보면 역할이 더 분명해진다.
+
+```cpp
+AMainPlayerController::AMainPlayerController()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // 마우스 커서를 화면에 보이게 한다.
+    bShowMouseCursor = true;
+}
+
+void AMainPlayerController::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // 게임 입력도 받고, UI 입력도 같이 받을 수 있는 모드
+    FInputModeGameAndUI InputMode;
+    SetInputMode(InputMode);
+}
+
+void AMainPlayerController::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+
+    FHitResult Hit;
+
+    // 마우스 커서 아래가 월드의 어디인지 피킹한다.
+    bool Pick = GetHitResultUnderCursor(
+        ECollisionChannel::ECC_GameTraceChannel5,
+        true,
+        Hit
+    );
+}
+```
+
+초보자용으로 풀면 이렇다.
+
+- `Pawn`은 월드 안에 존재하는 몸체다.
+- `PlayerController`는 입력, 마우스, 빙의 같은 “조종”을 맡는다.
+- `GameMode`는 둘을 기본 규칙으로 이어 준다.
+
+즉 “누가 조종당하는가”와 “누가 조종하는가”를 분리하는 것이 언리얼 구조의 핵심이다.
+
+### 5.5 `AShinbi`: 공통 PlayerCharacter가 실제 플레이어 캐릭터로 구체화되는 예
+
+`APlayerCharacter`가 공통 베이스라면, `AShinbi`는 그 베이스에 실제 외형과 애니메이션 자산을 꽂아 넣은 구체 캐릭터다.
+
+```cpp
+AShinbi::AShinbi()
+{
+    PrimaryActorTick.bCanEverTick = true;
+
+    // 실제 플레이어 모델 에셋을 로드한다.
+    static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(
+        TEXT("/Script/Engine.SkeletalMesh'/Game/ParagonShinbi/Characters/Heroes/Shinbi/Skins/Tier_1/Shinbi_Dynasty/Meshes/ShinbiDynasty.ShinbiDynasty'")
+    );
+
+    if (MeshAsset.Succeeded())
+        GetMesh()->SetSkeletalMeshAsset(MeshAsset.Object);
+
+    // 캡슐 크기와 메시 위치를 외형에 맞게 조정한다.
+    GetCapsuleComponent()->SetCapsuleHalfHeight(95.f);
+    GetCapsuleComponent()->SetCapsuleRadius(28.f);
+    GetMesh()->SetRelativeLocation(FVector(0.0, 0.0, -95.0));
+    GetMesh()->SetRelativeRotation(FRotator(0.0, -90.0, 0.0));
+
+    // 이 캐릭터가 사용할 애니메이션 블루프린트 클래스를 연결한다.
+    static ConstructorHelpers::FClassFinder<UAnimInstance> AnimClass(
+        TEXT("/Script/Engine.AnimBlueprint'/Game/Player/Shinbi/ABPShinbiTemplate.ABPShinbiTemplate_C'")
+    );
+
+    if (AnimClass.Succeeded())
+        GetMesh()->SetAnimInstanceClass(AnimClass.Class);
+}
+```
+
+이 코드는 첫날 개념을 아주 잘 보여 준다.
+
+- `APlayerCharacter`: 플레이어 공통 구조
+- `AShinbi`: 그 구조에 “신비”라는 실제 외형과 애님 자산을 꽂은 버전
+
+즉 상속은 “기능을 복붙”하는 게 아니라, 공통 틀 위에 캐릭터별 차이를 올리는 방식이라고 이해하면 된다.
+
+### 5.6 `BeginPlay`, `Tick`, 입력 함수는 블루프린트 이벤트와 거의 같은 이름으로 C++에도 존재한다
+
+첫날 블루프린트에서 `BeginPlay`, `Tick`을 배웠다면, C++에서도 거의 같은 구조를 바로 찾을 수 있다.
+`APlayerCharacter`는 그 대응 관계를 보여 주는 좋은 예다.
+
+```cpp
+void APlayerCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // 메시에서 애님 인스턴스를 얻어 둔다.
+    mAnimInst = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+
+    // 현재 플레이어를 조종 중인 컨트롤러를 얻는다.
+    TObjectPtr<APlayerController> PlayerController = GetController<APlayerController>();
+
+    if (IsValid(PlayerController))
+    {
+        // Enhanced Input 서브시스템을 얻는다.
+        TObjectPtr<UEnhancedInputLocalPlayerSubsystem> Subsystem =
+            ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
+                PlayerController->GetLocalPlayer()
+            );
+
+        // 기본 입력 데이터 자산에서 매핑 컨텍스트를 꺼내 등록한다.
+        const UDefaultInputData* InputData = GetDefault<UDefaultInputData>();
+        Subsystem->AddMappingContext(InputData->mContext, 0);
+    }
+}
+
+void APlayerCharacter::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+}
+```
+
+이 코드는 블루프린트에서 봤던 설명을 그대로 다시 확인시켜 준다.
+
+- `BeginPlay`: 시작할 때 한 번 하는 초기화
+- `Tick`: 매 프레임 반복 처리
+
+즉 블루프린트와 C++는 생명주기 이름부터 거의 1대1로 대응된다.
+
+입력 바인딩도 마찬가지다.
+
+```cpp
+void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+    TObjectPtr<UEnhancedInputComponent> Input =
+        Cast<UEnhancedInputComponent>(PlayerInputComponent);
+
+    if (IsValid(Input))
+    {
+        const UDefaultInputData* InputData = GetDefault<UDefaultInputData>();
+
+        // "Move" 액션이 들어오면 MoveKey 함수를 호출
+        Input->BindAction(InputData->FindAction(TEXT("Move")),
+            ETriggerEvent::Triggered, this, &APlayerCharacter::MoveKey);
+
+        // "Rotation" 액션이 들어오면 RotationKey 함수 호출
+        Input->BindAction(InputData->FindAction(TEXT("Rotation")),
+            ETriggerEvent::Triggered, this, &APlayerCharacter::RotationKey);
+    }
+}
+```
+
+이 부분은 본격적으로는 `260406`에서 자세히 다루지만, 첫날 기준으로도 이미 중요한 의미가 있다.
+블루프린트의 이벤트 노드가 “실행 시점에 맞춰 함수를 호출한다”면, C++에서는 그 연결을 `BindAction` 같은 코드로 직접 써 준다는 점이다.
+
+실제 이동 함수도 읽어 보자.
+
+```cpp
+void APlayerCharacter::MoveKey(const FInputActionValue& Value)
+{
+    FVector Axis = Value.Get<FVector>();
+
+    // 앞뒤 이동
+    AddMovementInput(GetActorForwardVector(), Axis.X);
+
+    // 좌우 값은 현재 프로젝트에서 몸 회전에 사용
+    AddControllerYawInput(Axis.Y);
+}
+```
+
+초보자 입장에서 이 함수는 이렇게 읽으면 된다.
+
+- 입력 값이 들어온다.
+- 그 값을 꺼낸다.
+- 앞뒤 이동이나 회전에 전달한다.
+
+즉 블루프린트 노드로 하던 일과 본질은 같고, 표현만 C++ 문장으로 바뀐 것이다.
+
+### 5.7 장 정리
+
+제5장의 결론은 첫날 배운 개념이 결코 “블루프린트 전용 설명”이 아니라는 점이다.
+현재 프로젝트의 C++ 소스를 보면 같은 구조가 더 선명하게 드러난다.
+
+- `APlayerCharacter`: `Character`가 왜 편한지 보여 준다.
+- `AMonsterBase`: `Pawn`이 왜 더 직접 조립형인지 보여 준다.
+- `ADefaultGameMode`: 월드 기본 규칙을 정한다.
+- `AMainPlayerController`: 조종과 입력의 주체를 맡는다.
+- `AShinbi`: 공통 플레이어 베이스를 실제 캐릭터로 구체화한다.
+
+즉 첫날 개념을 C++로 다시 읽을 수 있어야, 이후 날짜에서 나오는 소스 파일들도 덜 추상적으로 느껴진다.
+
+---
+
 ## 전체 정리
 
 `260401`은 구현 결과보다 사고방식을 세우는 날이다.
 첫 번째 강의에서 프로젝트의 출발 규칙을 정하고, 두 번째 강의에서 에디터 인터페이스를 읽고, 세 번째 강의에서 언리얼 클래스 구조를 이해하고, 네 번째 강의에서 블루프린트 로직의 가장 작은 문법을 익힌다.
+그리고 이번 정리본에서는 다섯 번째 장을 통해, 그 개념들이 현재 `UE20252` C++ 코드에서 실제로 어떻게 생겼는지까지 연결해 본다.
 
 이 날짜를 제대로 이해하면 이후 강의들이 훨씬 수월해진다.
 
@@ -483,15 +898,18 @@ virtual void Tick(float DeltaTime) override;
 - `Pawn`과 `Character`의 차이를 실제 프로젝트 예시와 함께 말할 수 있는가?
 - `GameMode`와 `PlayerController`가 왜 따로 존재하는지 설명할 수 있는가?
 - `BeginPlay`, `Tick`, 실행 핀, 데이터 핀, 변수, `Delta Seconds`의 의미를 이해했는가?
+- `APlayerCharacter`, `AMonsterBase`, `ADefaultGameMode`, `AMainPlayerController` 코드를 보고 첫날 개념을 실제 구현과 연결할 수 있는가?
 
 ## 세미나 질문
 
 1. 수업 초반부터 `Blueprint`와 `C++`를 대립 개념이 아니라 함께 쓰는 층으로 설명한 이유는 무엇일까?
 2. 플레이어는 `Character`, 몬스터는 `Pawn` 기반으로 가는 현재 `UE20252` 구조는 어떤 장단점을 가질까?
-3. 블루프린트에서 상수를 변수로 바꾸고 인스턴스 편집 가능하게 여는 설계는 왜 실습과 반복 속도를 크게 높여 줄까?
+3. `GameMode`, `PlayerController`, `Pawn`을 분리하는 구조는 “플레이어 하나가 다 한다”는 방식보다 어떤 장점을 줄까?
+4. 블루프린트에서 상수를 변수로 바꾸고 인스턴스 편집 가능하게 여는 설계는 왜 실습과 반복 속도를 크게 높여 줄까?
 
 ## 권장 과제
 
 1. `Viewport`, `Outliner`, `Details`, `Content Browser` 네 패널이 실제 작업 흐름에서 어떤 순서로 자주 연결되는지 스스로 서술해 본다.
 2. `APlayerCharacter`와 `AMonsterBase`의 상속 차이를 보고, 왜 강의에서 `Pawn / Character`를 길게 설명했는지 5문장 안으로 정리해 본다.
 3. 블루프린트로 이동 실험을 한다고 가정하고, `Tick + Delta Seconds + Speed 변수` 조합이 왜 필요한지 직접 설명문을 써 본다.
+4. `ADefaultGameMode`, `AMainPlayerController`, `APlayerCharacter`를 보고 “월드 규칙, 조종 주체, 조종 대상”이 각각 무엇인지 표로 정리해 본다.
