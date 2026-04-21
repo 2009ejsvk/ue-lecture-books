@@ -9,6 +9,7 @@ title: UE Lecture Books
 
 ## 교재 목록
 
+- [260403. 충돌, 태그, 트리거 기반 기믹 입문](./260403/)
 - [260406. 플레이어 C++ 전환과 입력 시스템 기초](./260406/)
 - [260407. 플레이어 로코모션 애니메이션 기초](./260407/)
 - [260408. 플레이어 공격 애니메이션 구조](./260408/)
@@ -26,6 +27,7 @@ title: UE Lecture Books
 
 ## 현재 포함된 주제
 
+- `260403`: Block/Overlap/Ignore, Projectile Stop, Actor Tag, Timer, Trigger Box, Level Blueprint
 - `260406`: PlayerCharacter, Shinbi, DefaultGameMode, InputData, MappingContext, Rotation, Jump, Attack
 - `260407`: AnimInstance, Animation Blueprint, Aim Offset, GroundLocomotion, Blend Space, Jump 상태 머신
 - `260408`: AnimMontage, Slot, Notify, Combo Section, PlayerAnimInstance, Animation Template
@@ -38,6 +40,7 @@ title: UE Lecture Books
 ## 저장소 구조
 
 - `index.md`: 루트 서가
+- `260403/index.md`: 2026-04-03 강의 교재
 - `260406/index.md`: 2026-04-06 강의 교재
 - `260407/index.md`: 2026-04-07 강의 교재
 - `260408/index.md`: 2026-04-08 강의 교재
@@ -46,4 +49,4 @@ title: UE Lecture Books
 - `260415/index.md`: 2026-04-15 강의 교재
 - `260416/index.md`: 2026-04-16 강의 교재
 - `260417/index.md`: 2026-04-17 강의 교재
-- `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`: 원본 영상에서 다시 추출한 캡처
