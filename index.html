@@ -6,281 +6,65 @@
     <title>UE Lecture Books</title>
     <meta
       name="description"
-      content="언리얼 엔진 강의 교재 모음. 날짜별 HTML 교재와 GitHub Pages용 메인 인덱스."
+      content="언리얼 엔진 강의 교재 서가. 날짜별 HTML 교재를 고정 판형의 전자 교재 형식으로 읽을 수 있습니다."
     >
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@500;700&display=swap"
       rel="stylesheet"
     >
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #0b0e12;
-        --panel: #12161d;
-        --panel-soft: #171c24;
-        --ink: #edf2f7;
-        --ink-soft: #b5c0cf;
-        --ink-faint: #7f8b9d;
-        --rule: #2d3746;
-        --accent: #8fb4ff;
-        --shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        min-width: 1120px;
-        background:
-          radial-gradient(circle at top, rgba(87, 124, 191, 0.18), transparent 26%),
-          linear-gradient(180deg, #0d1117 0%, var(--bg) 100%);
-        color: var(--ink);
-        font-family: "Noto Sans KR", sans-serif;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .shell {
-        width: 1120px;
-        margin: 0 auto;
-        padding: 28px 0 56px;
-      }
-
-      .hero,
-      .deck,
-      .footer {
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--rule);
-        border-radius: 28px;
-        background: var(--panel);
-        box-shadow: var(--shadow);
-      }
-
-      .hero::before,
-      .deck::before,
-      .footer::before {
-        content: "";
-        position: absolute;
-        inset: 0 0 auto 0;
-        height: 68px;
-        border-bottom: 1px solid rgba(143, 180, 255, 0.12);
-        background: linear-gradient(180deg, rgba(143, 180, 255, 0.08), rgba(143, 180, 255, 0));
-      }
-
-      .hero {
-        min-height: 520px;
-        margin-bottom: 28px;
-        padding: 108px 64px 56px;
-      }
-
-      .eyebrow,
-      .deck-label,
-      .meta-label {
-        color: var(--ink-faint);
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .eyebrow::before,
-      .deck-label::before {
-        content: "";
-        display: inline-block;
-        width: 28px;
-        height: 1px;
-        margin-right: 12px;
-        vertical-align: middle;
-        background: currentColor;
-      }
-
-      h1 {
-        margin: 18px 0 0;
-        max-width: 11ch;
-        font-size: 4rem;
-        line-height: 1.08;
-        letter-spacing: -0.03em;
-      }
-
-      .hero-copy {
-        max-width: 62ch;
-        margin-top: 20px;
-        color: var(--ink-soft);
-        font-size: 1.06rem;
-        line-height: 1.9;
-      }
-
-      .hero-meta {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        margin-top: 34px;
-      }
-
-      .meta-card {
-        padding: 20px 22px;
-        border: 1px solid var(--rule);
-        border-radius: 18px;
-        background: var(--panel-soft);
-      }
-
-      .meta-value {
-        margin-top: 8px;
-        color: var(--ink);
-        font-size: 1.08rem;
-        font-weight: 700;
-      }
-
-      .deck {
-        min-height: 360px;
-        margin-bottom: 28px;
-        padding: 96px 40px 40px;
-      }
-
-      .deck-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 24px;
-        margin-top: 24px;
-      }
-
-      .deck-card {
-        display: grid;
-        gap: 18px;
-        min-height: 250px;
-        padding: 26px 26px 24px;
-        border: 1px solid var(--rule);
-        border-radius: 22px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
-        transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
-      }
-
-      .deck-card:hover {
-        transform: translateY(-2px);
-        border-color: #4d5d74;
-        background: linear-gradient(180deg, rgba(143, 180, 255, 0.08), rgba(255, 255, 255, 0.02));
-      }
-
-      .deck-code {
-        color: var(--ink-faint);
-        font-size: 0.8rem;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .deck-title {
-        margin: 0;
-        font-size: 1.7rem;
-        line-height: 1.24;
-      }
-
-      .deck-desc {
-        margin: 0;
-        color: var(--ink-soft);
-        line-height: 1.8;
-      }
-
-      .deck-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: auto;
-      }
-
-      .action {
-        display: inline-flex;
-        align-items: center;
-        padding: 10px 14px;
-        border: 1px solid var(--rule);
-        border-radius: 999px;
-        color: var(--ink-soft);
-        font-size: 0.92rem;
-      }
-
-      .action.primary {
-        border-color: rgba(143, 180, 255, 0.36);
-        color: var(--accent);
-      }
-
-      .footer {
-        padding: 92px 34px 26px;
-        color: var(--ink-soft);
-        font-size: 0.9rem;
-      }
-
-      .footer strong {
-        color: var(--ink);
-      }
-    </style>
+    <link rel="stylesheet" href="./shared-styles.css">
   </head>
   <body>
-    <div class="shell">
-      <section class="hero">
-        <div class="eyebrow">UE Lecture Books</div>
-        <h1>언리얼 강의 교재 아카이브</h1>
-        <p class="hero-copy">
-          날짜별 언리얼 엔진 학습 내용을 HTML 교재로 정리한 모음입니다.
-          각 권은 고정 판형의 정적 슬라이드 교안처럼 읽을 수 있도록 구성되어 있으며,
-          고해상도 원본 영상 캡처와 실제 프로젝트 소스를 함께 포함합니다.
+    <div class="library-shell">
+      <header class="library-cover">
+        <p class="library-kicker">UE Lecture Books Archive</p>
+        <h1 class="library-title">언리얼 강의 교재 서가</h1>
+        <p class="library-copy">
+          날짜별 강의 정리본을 한 권씩 모아 둔 아카이브입니다.
+          각 교재는 영상 자막, 원본 캡처, UE20252 실제 소스를 함께 읽도록 구성되어 있으며,
+          화면형 대시보드 대신 고정 판형의 전자 교재처럼 넘겨 읽는 흐름을 기준으로 정리되어 있습니다.
         </p>
+        <p class="cover-note">GitHub Pages edition</p>
+      </header>
 
-        <div class="hero-meta">
-          <div class="meta-card">
-            <div class="meta-label">Format</div>
-            <div class="meta-value">Static HTML Lecture Book</div>
-          </div>
-          <div class="meta-card">
-            <div class="meta-label">Theme</div>
-            <div class="meta-value">Dark Slide Handout</div>
-          </div>
-          <div class="meta-card">
-            <div class="meta-label">Source</div>
-            <div class="meta-value">UE20252 / Video + Code</div>
-          </div>
+      <main class="library-section">
+        <div class="section-heading">
+          <p class="section-label">Shelf</p>
+          <h2>등록된 교재</h2>
         </div>
-      </section>
 
-      <section class="deck">
-        <div class="deck-label">Available Books</div>
-        <div class="deck-grid">
-          <a class="deck-card" href="./260415/index.html">
-            <div class="deck-code">260415</div>
-            <h2 class="deck-title">SpawnPoint, Patrol, Target / MoveTo</h2>
-            <p class="deck-desc">
-              SpawnPoint 기초, SplineComponent와 BehaviorTree 등록, 타겟 인식 및 MoveTo를 한 권으로 정리한 교재.
-            </p>
-            <div class="deck-actions">
-              <span class="action primary">교재 열기</span>
-              <span class="action">상세 슬라이드</span>
-            </div>
-          </a>
+        <ol class="library-list">
+          <li class="library-item">
+            <a class="library-link" href="./260415/index.html">
+              <span class="library-code">260415</span>
+              <span>
+                <strong class="library-item-title">몬스터 스폰과 순찰 AI 기초</strong>
+                <span class="library-item-copy">
+                  SpawnPoint, Patrol, Perception, Move To를 자막과 코드 기준으로 다시 엮은 교재.
+                </span>
+              </span>
+            </a>
+          </li>
+          <li class="library-item">
+            <a class="library-link" href="./260416/index.html">
+              <span class="library-code">260416</span>
+              <span>
+                <strong class="library-item-title">몬스터 전투 AI 루프</strong>
+                <span class="library-item-copy">
+                  Monster AnimInstance, Trace, Attack, Notify 기반 전투 흐름을 정리한 교재.
+                </span>
+              </span>
+            </a>
+          </li>
+        </ol>
+      </main>
 
-          <a class="deck-card" href="./260416/index.html">
-            <div class="deck-code">260416</div>
-            <h2 class="deck-title">Monster AnimInstance, Trace, Attack</h2>
-            <p class="deck-desc">
-              상태 enum, 추적 태스크, 공격 노티파이와 블랙보드 루프를 중심으로 전투 AI를 정리한 교재.
-            </p>
-            <div class="deck-actions">
-              <span class="action primary">교재 열기</span>
-              <span class="action">고해상도 도판</span>
-            </div>
-          </a>
-        </div>
-      </section>
-
-      <section class="footer">
-        <strong>GitHub Pages용 루트 인덱스</strong><br>
-        새 교재가 늘어나면 이 페이지에 날짜 카드만 추가하면 됩니다.
-      </section>
+      <footer class="footer">
+        <p>저장소: <a href="https://github.com/2009ejsvk/ue-lecture-books">github.com/2009ejsvk/ue-lecture-books</a></p>
+        <p>배포 주소: <a href="https://2009ejsvk.github.io/ue-lecture-books/">2009ejsvk.github.io/ue-lecture-books</a></p>
+      </footer>
     </div>
   </body>
 </html>
