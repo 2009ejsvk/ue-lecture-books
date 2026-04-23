@@ -213,6 +213,31 @@ if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 
 즉 `Damage`는 최종 체력이 아니라 “이번 피해량을 전달하는 임시 통로”다.
 
+## UE20252 대응: 이 프로젝트는 `Damage`보다 스탯 미러링이 먼저 보인다
+
+`UE_Academy_Stduy` 덤프 기준으로 보면, 현재 프로젝트의 `AttributeSet` 축은 아래처럼 잡혀 있다.
+
+- `UBaseAttributeSet`
+  `Attack`, `Defense`, `HP`, `HPMax`, `MP`, `MPMax`, `WalkSpeed`, `RunSpeed`, `AttackDistance`, `Gold`
+- `UPlayerAttributeSet`
+  기본 전투 수치에 더해 플레이어 전용 정보인 `Job`
+
+여기서 시작값은 `GameplayEffect`에서 바로 나오지 않는다.
+`AMainPlayerState`가 `PDA_PlayerInfo`를 통해 `DT_PlayerInfo`를 읽고,
+`Shinbi`, `Wraith` 행에 들어 있는 스탯을 자기 멤버 값으로 받은 뒤 `UPlayerAttributeSet`에도 다시 넣는다.
+즉 현재 구조는 `데이터 테이블 -> PlayerState -> AttributeSet` 미러링이 먼저 보이는 형태다.
+
+`GameplayEffect` 쪽도 `GASDocumentation` 예제와 결이 조금 다르다.
+지금 가장 분명한 실전 예시는 `UGameplayEffect_ManaCost`이고,
+이 Effect는 `Effect.Mana` 태그를 키로 받는 `SetByCaller` 값을 이용해 `MP`를 즉시 수정한다.
+
+그래서 이 프로젝트를 읽을 때는 아래처럼 정리하면 덜 헷갈린다.
+
+1. 시작 스탯은 `DT_PlayerInfo`에서 온다.
+2. 현재 가장 또렷한 `GameplayEffect` 예시는 `MP` 코스트다.
+3. `PostGameplayEffectExecute()`는 여전히 후처리 확장 지점이지만,
+   지금 단계에서는 `Damage 메타 Attribute`보다 `ManaCost 적용`이 먼저 눈에 띈다.
+
 ## 이 편의 핵심 정리
 
 이 편에서 꼭 기억할 문장은 하나다.

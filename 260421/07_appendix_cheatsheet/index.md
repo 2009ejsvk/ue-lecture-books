@@ -33,7 +33,7 @@ title: 260421 부록 - GAS 함수 치트시트와 추천 파일 순서
 
 `쓸 수 있나 -> 시작 -> 확정 -> 효과 적용 -> 값 반영 -> 종료`
 
-## 예제 프로젝트 추천 파일 순서
+## GASDocumentation 예제 프로젝트 추천 파일 순서
 
 1. `D:\UnrealProjects\GASDocumentation\Source\GASDocumentation\Private\Characters\Abilities\GDGA_CharacterJump.cpp`
 2. `D:\UnrealProjects\GASDocumentation\Source\GASDocumentation\Public\Characters\Abilities\GDGameplayAbility.h`
@@ -44,6 +44,28 @@ title: 260421 부록 - GAS 함수 치트시트와 추천 파일 순서
 7. `D:\UnrealProjects\GASDocumentation\Source\GASDocumentation\Private\Characters\Abilities\GDDamageExecCalculation.cpp`
 8. `D:\UnrealProjects\GASDocumentation\Source\GASDocumentation\Private\Player\GDPlayerState.cpp`
 9. `D:\UnrealProjects\GASDocumentation\Source\GASDocumentation\Private\Characters\Heroes\GDHeroCharacter.cpp`
+
+## UE20252 대응 추천 덤프 순서
+
+이번 개정은 `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility` 덤프를 기준으로 보강했다.
+실제 프로젝트 축을 따라 읽고 싶다면 아래 순서가 가장 덜 헷갈린다.
+
+1. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\InputData_SourceDump.txt`
+2. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\PlayerCharacterGAS_SourceDump.txt`
+3. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\ShinbiGAS_SourceDump.txt`
+4. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\GameplayAbility_Attack_SourceDump.txt`
+5. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\GameplayAbility_Base_SourceDump.txt`
+6. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\GameplayEffect_ManaCost_SourceDump.txt`
+7. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\BaseAttributeSet_SourceDump.txt`
+8. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\PlayerAttributeSet_SourceDump.txt`
+9. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\MainPlayerState_SourceDump.txt`
+10. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\DT_PlayerInfo_AssetDump.txt`
+11. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\PDA_PlayerInfo_AssetDump.txt`
+12. `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\DefaultGameplayTags_GameplayTagsDump.txt`
+
+이 순서는 대략 아래 감각으로 이어진다.
+
+`입력 연결 -> Character의 ASC -> 공격 이벤트 -> Ability -> Effect -> Attribute -> PlayerState 데이터 공급 -> 태그 확인`
 
 ## 초보자 추천 학습 루트
 

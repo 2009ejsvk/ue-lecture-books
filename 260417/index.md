@@ -43,6 +43,16 @@ title: 260417 비전투 대기와 순찰을 반복하는 AI를 만들고 순찰 
 5. 언리얼 공식 문서를 통해 `Behavior Tree`, `Navigation`, `Perception`, 디버깅 도구가 엔진 표준 용어로 어떻게 정리되는지 확인한다.
 6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `BTTask_MonsterWait`, `BTTask_Patrol`, `MonsterSpawnPoint`, `MonsterBase` 안에서 어떻게 하나의 비전투 루프로 이어지는지 확인한다.
 
+## 2026-04-23 덤프 반영 메모
+
+이번 보강에서는 `Wait`와 `Patrol`이 실제로 얼마나 "간단한 태스크 두 개"가 아닌지를 덤프 결과로 다시 확인했다. 그래서 이 날짜는 순찰 기능 추가라기보다, 비전투 상태를 안전하게 돌리는 런타임 제어문을 만드는 날로 보는 편이 맞다.
+
+- `BTTask_MonsterWait_FileDump.txt`를 보면 이 태스크는 `GetInstanceMemorySize()`로 `FWaitTimer` 크기만큼 메모리를 잡고, 블랙보드 `WaitTime`을 읽어 타이머를 건 뒤 `Complete` 플래그가 바뀔 때까지 기다린다. 즉 일반 `Wait` 노드를 끼워 넣은 것이 아니라, 전투 전환을 끊지 않으면서도 상태를 추적할 수 있는 커스텀 대기 노드다.
+- 같은 덤프는 `WaitTime = BlackboardComp->GetValueAsFloat(TEXT("WaitTime"))` 흐름을 드러낸다. 그래서 대기 시간은 하드코딩된 고정값이 아니라 블랙보드 문맥으로 내려오며, 이후 몬스터 타입별로 조정하기 좋은 구조가 이미 갖춰져 있다.
+- `BTTask_Patrol_FileDump.txt`를 보면 순찰 태스크는 `MoveToLocation(Monster->GetPatrolPoint())`로 현재 점을 향해 이동하고, 거리가 `5.f` 이하가 되면 태스크를 마무리한 뒤 `OnTaskFinished()`에서 `Monster->NextPatrol()`을 호출한다. 즉 다음 점 계산은 이동 중이 아니라 "현재 태스크 종료" 시점에 일어난다.
+- `MonsterSpawnPoint_FileDump.txt`는 `USplineComponent`의 점들을 월드 좌표 배열로 복사해 `SetPatrolPoints()`로 넘긴다는 사실을 보여 준다. 그래서 본문에서 설명한 "순찰은 곡선 추종이 아니라 점 기반 이동"이라는 문장이 추상 비유가 아니라 실제 데이터 파이프라인 설명이 된다.
+- `BT_Monster_Normal_AssetDump.txt`까지 함께 보면 `Target is Not Set` 브랜치 아래에 실제로 `BTTask_MonsterWait -> BTTask_Patrol` 순서가 놓여 있다. 즉 `260417`의 핵심은 새 AI 계통을 만드는 것이 아니라, 기존 블랙보드/비헤이비어 트리 안에서 비전투 시간대를 안정적으로 소비하는 방법을 만드는 데 있다.
+
 ---
 
 ## 제1장. Monster Wait Task: 비전투 상태를 제어하는 법

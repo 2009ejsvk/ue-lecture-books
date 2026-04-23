@@ -42,6 +42,19 @@ title: 260407 이동 속도와 시선 값을 애니메이션으로 연결해 자
 5. 언리얼 공식 문서를 통해 애님 변수, `Aim Offset`, `Blend Space`, 상태 머신이 엔진 표준 용어로 어떻게 정리되는지 확인한다.
 6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `PlayerAnimInstance`, `PlayerTemplateAnimInstance`, `PlayerCharacter` 안에서 어떻게 계산되고 전달되는지 확인한다.
 
+## 2026-04-23 덤프 반영 메모
+
+이번 덤프 재확인으로 `260407`은 “애님 개념 소개”가 아니라 이미 템플릿화된 로코모션 구조를 읽는 문서라는 점이 더 분명해졌다.
+
+- `PlayerAnimInstance_SourceDump.txt`, `PlayerTemplateAnimInstance_SourceDump.txt`
+  현재 프로젝트는 `UPlayerAnimInstance -> UPlayerTemplateAnimInstance` 2단 C++ 레이어를 실제로 쓰고 있다. 공용 변수 계산과 공용 그래프 틀을 나눈다는 문서 설명이 그대로 맞다.
+- `ABPPlayerTemplate_NodeDump.txt`
+  `Locomotion`, `GroundLoco`, `Jump` 상태 머신과 `GroundLoco`, `Locomotion`, `FullBody` 캐시 포즈가 전부 확인된다.
+- 같은 덤프
+  `TemplateFullBody` 슬롯, `LayeredBoneBlend`, `BlendListByBool`까지 들어 있어, 이동 포즈 위에 다른 포즈를 덮는 구조가 이미 공용 그래프로 굳어져 있다.
+- `ABPShinbiTemplate_*`, `ABPWraithTemplate_*`
+  캐릭터별 차이는 공용 그래프를 버리는 것이 아니라, 같은 틀 위에 자산만 다르게 얹는 방식이라는 점이 다시 확인된다.
+
 ---
 
 ## 제1장. Animation Blueprint와 AnimInstance: 플레이어와 애님 그래프를 연결하는 중간 레이어

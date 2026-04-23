@@ -11,6 +11,15 @@ title: 260422 중급 2편 - Spec 적용과 PostGameplayEffectExecute
 이 편에서는 `UGameplayAbility_Base::ActivateAbility()` 안에서 실제 마나 비용이 어떻게 적용되는지 정리한다.
 핵심은 `GameplayEffect 클래스`와 `실행용 Spec`, 그리고 `AttributeSet 후처리 지점`을 구분해서 읽는 것이다.
 
+처음엔 아래 세 단어만 구분해도 된다.
+
+- `GameplayEffect`
+  규칙 원본
+- `Spec`
+  이번 시전에만 쓰는 실행용 복사본
+- `PostGameplayEffectExecute`
+  값이 바뀐 뒤 반응을 모아 두는 자리
+
 ## 봐야 할 파일
 
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\GameplayAbility_Base.h`
@@ -23,10 +32,13 @@ title: 260422 중급 2편 - Spec 적용과 PostGameplayEffectExecute
 그래서 먼저 `mMana`와 현재 MP를 비교해, 비용이 부족하면 Ability를 중단한다.
 
 ```cpp
+// 이 Ability에 마나 비용이 있는지 먼저 본다.
 if (mMana > 0.f)
 {
+    // 현재 MP가 필요한 비용보다 부족하면
     if (SourceAttr && SourceAttr->GetMP() < mMana)
     {
+        // Ability를 더 진행하지 않고 바로 취소한다.
         UE_LOG(UELOG, Warning, TEXT("Mana가 부족합니다."));
         mAbilityActive = false;
         CancelAbility(Handle, ActorInfo, ActivationInfo, true);
@@ -51,6 +63,7 @@ if (mMana > 0.f)
 이 강의에서 가장 헷갈리기 쉬운 부분이 바로 이 구분이다.
 
 ```cpp
+// ManaCost 규칙 원본으로부터, 이번 시전에만 쓸 실행용 Spec을 만든다.
 FGameplayEffectSpecHandle ManaSpec = MakeOutgoingGameplayEffectSpec(
     UGameplayEffect_ManaCost::StaticClass(), GetAbilityLevel());
 ```
@@ -78,6 +91,8 @@ FGameplayEffectSpecHandle ManaSpec = MakeOutgoingGameplayEffectSpec(
 `SetByCaller`를 실제로 채우는 지점은 여기다.
 
 ```cpp
+// "Effect.Mana" 입력칸에 이번 시전 비용을 넣는다.
+// 음수값을 넣는 이유는 Additive 규칙으로 MP를 줄이기 위해서다.
 ManaSpec.Data->SetSetByCallerMagnitude(
     FGameplayTag::RequestGameplayTag(TEXT("Effect.Mana")),
     -mMana);
@@ -111,6 +126,7 @@ Effect 쪽 연산은 `Additive`였다.
 값을 다 채웠으면 마지막으로 실행한다.
 
 ```cpp
+// 방금 채운 ManaSpec을 사용자 자신의 ASC에 적용한다.
 SourceASC->ApplyGameplayEffectSpecToSelf(*ManaSpec.Data);
 ```
 
@@ -157,10 +173,12 @@ SourceASC->ApplyGameplayEffectSpecToSelf(*ManaSpec.Data);
 void UBaseAttributeSet::PostGameplayEffectExecute(
     const FGameplayEffectModCallbackData& Data)
 {
+    // 방금 바뀐 값이 MP라면, 여기서 MP 후처리를 넣을 수 있다.
     if (Data.EvaluatedData.Attribute == GetMPAttribute())
     {
     }
 
+    // 방금 바뀐 값이 HP라면, 여기서 HP 후처리를 넣을 수 있다.
     else if (Data.EvaluatedData.Attribute == GetHPAttribute())
     {
     }

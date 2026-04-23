@@ -91,7 +91,7 @@ GAS는 이걸 역할별로 분리해 준다.
 - `State.AimDownSights`
 - `Event.Montage.SpawnProjectile`
 
-## 예제 프로젝트 기준 대응표
+## GASDocumentation 예제 기준 대응표
 
 - `UGDAbilitySystemComponent`
   ASC
@@ -103,6 +103,29 @@ GAS는 이걸 역할별로 분리해 준다.
   GameplayEffect
 - `Ability.Jump`, `State.Dead`
   GameplayTag
+
+## UE20252 대응 메모
+
+`D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility` 덤프를 기준으로 보면,
+이 프로젝트의 다섯 핵심 이름은 아래처럼 대응된다.
+
+- `ASC`
+  `APlayerCharacterGAS`가 `mASC`를 직접 생성하고 소유한다.
+- `AttributeSet`
+  `UBaseAttributeSet`이 전투 기본 수치, `UPlayerAttributeSet`이 플레이어 전용 수치(`Job`)를 맡는다.
+- `GameplayAbility`
+  `UGameplayAbility_Base`, `UGameplayAbility_Attack`가 현재 가장 눈에 띄는 실제 Ability다.
+- `GameplayEffect`
+  `UGameplayEffect_ManaCost`가 `MP` 코스트를 적용한다.
+- `GameplayTag`
+  프로젝트 등록 태그는 현재 `Ability.Attack`, `Effect.Mana`처럼 아주 좁고 실전적인 축부터 시작한다.
+
+중요한 차이도 하나 있다.
+`GASDocumentation`은 GAS 전용 구조가 비교적 깔끔하게 분리돼 있지만,
+`UE20252`는 `AMainPlayerState`가 `PDA_PlayerInfo -> DT_PlayerInfo`를 읽고 그 값을 `UPlayerAttributeSet`으로 다시 넣는
+하이브리드 구조를 사용한다.
+즉 이 프로젝트는 “모든 것을 GAS 안에서만 처리한다”보다,
+기존 플레이어 데이터 구조 위에 GAS를 얹는 방식으로 옮겨 가는 중간 단계에 가깝다.
 
 ## 기존 방식과 GAS 방식 비교
 

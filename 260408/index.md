@@ -42,6 +42,19 @@ title: 260408 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투
 5. 언리얼 공식 문서를 통해 `Montage`, `Slot`, `Notify`, 레이어드 블렌딩, 애님 템플릿 분리가 엔진 표준 용어로 어떻게 설명되는지 확인한다.
 6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `PlayerAnimInstance`, `PlayerTemplateAnimInstance`, `AnimNotify_PlayerAttack`, `Shinbi`, `Wraith` 안에서 어떻게 이어지는지 확인한다.
 
+## 2026-04-23 덤프 반영 메모
+
+이번 덤프는 `260408`의 핵심이 “개념적인 몽타주 설명”이 아니라, 캐릭터별 다른 공격을 공용 슬롯 규칙 아래 묶어 둔 실제 데이터 설계라는 점을 잘 보여 준다.
+
+- `AM_Shinbi_Attack_Template_AssetDump.txt`
+  `Attack1`, `Attack2`, `Attack3`, `Attack4`, `AttackAir` 다섯 섹션이 있고 모두 `TemplateFullBody` 슬롯으로 들어간다.
+- `AM_Wraith_Attack_Template_AssetDump.txt`
+  `Attack1` 한 섹션만 가진다. 즉 같은 템플릿 구조라도 캐릭터별 콤보 깊이는 자산 데이터에서 갈라진다.
+- `AM_Shinbi_Skill1_Template_AssetDump.txt`
+  `Casting -> Loop -> Impact` 세 섹션이 실제로 잡혀 있다. 문서에서 설명한 “캐스팅 유지 후 확정 발사” 구조가 몽타주 데이터로 확인된다.
+- `ABPPlayerTemplate_NodeDump.txt`
+  위 몽타주들은 전부 `TemplateFullBody` 슬롯을 타고 들어온다. 그래서 템플릿 구조의 진짜 핵심은 캐릭터별 자산 차이보다 공통 슬롯 규약을 먼저 세운 데 있다.
+
 ---
 
 ## 제1장. AnimMontage와 Slot: 로코모션 위에 공격을 얹는 법

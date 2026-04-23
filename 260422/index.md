@@ -11,6 +11,10 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 
 이번 강의의 핵심은 아래 한 줄로 요약할 수 있다.
 
+`공격 입력 -> 공격 이벤트 전달 -> Ability 시작 -> 마나 비용 규칙 준비 -> 내 MP 차감 -> 적용 후 반응 준비`
+
+코드 이름으로 다시 쓰면 아래 흐름이다.
+
 `GameplayEvent로 공격 Ability 발동 -> Source ASC/AttributeSet 확보 -> ManaCost GameplayEffect 생성 -> SetByCaller로 소모량 주입 -> ApplyGameplayEffectSpecToSelf -> PostGameplayEffectExecute로 후처리 준비`
 
 즉 이번 날짜는 “GameplayEffect가 무엇인가”를 다시 설명하는 날이 아니라, `GameplayEffect를 우리 코드에 실제로 어떻게 꽂는가`를 다루는 실전편이다.
@@ -35,21 +39,23 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 
 ## 초급
 
+처음 읽는다면 타입 이름을 다 외우지 말고, 각 편이 "무슨 역할을 하나"만 먼저 잡아도 충분하다.
+
 - [01. 이벤트 공격이 Ability로 들어오는 흐름](./01_beginner_event_to_asc_and_attribute/)
-  `ShinbiGAS::NormalAttack()`에서 `GameplayEvent`를 보내고, `UGameplayAbility_Attack::ActivateAbility()`에서 `SourceActor`, `SourceASC`, `SourceAttr`를 꺼내는 흐름을 정리한다.
+  공격 입력이 GAS Ability까지 전달되는 큰 흐름을 먼저 잡는다. `GameplayEvent`, `SourceASC`, `SourceAttr`는 그다음에 읽어도 된다.
 
 ## 중급
 
 - [02. ManaCost GameplayEffect와 SetByCaller](./02_intermediate_manacost_effect_and_setbycaller/)
-  `UGameplayEffect_ManaCost` 생성자 하나를 기준으로 `DurationPolicy`, `FGameplayModifierInfo`, `GetMPAttribute()`, `Additive`, `FSetByCallerFloat`, `Effect.Mana`를 읽는 법을 설명한다.
+  마나 비용을 직접 깎지 않고 "비용 규칙"으로 분리하는 법을 설명한다. 세부 타입 이름은 `DurationPolicy`, `Modifier`, `SetByCaller` 정도만 따라가면 된다.
 
 - [03. Spec 적용과 PostGameplayEffectExecute](./03_intermediate_spec_apply_and_post_execute/)
-  `UGameplayAbility_Base::ActivateAbility()` 안에서 마나 부족을 검사하고, `MakeOutgoingGameplayEffectSpec -> SetSetByCallerMagnitude -> ApplyGameplayEffectSpecToSelf`로 이어지는 실제 적용 흐름을 정리한다.
+  실행용 복사본인 `Spec`에 이번 시전 비용을 넣고, 자기 자신에게 적용하는 실제 흐름을 정리한다.
 
 ## 고급
 
 - [04. TargetData와 다음 데미지 이펙트 예고](./04_advanced_targetdata_and_damage_preview/)
-  `TriggerEventData->TargetData`에서 `FGameplayAbilityTargetData_SingleTargetHit`를 꺼내고 `TargetASC`를 확보하는 과정이, 이후 데미지 이펙트 설계와 어떻게 연결되는지 설명한다.
+  "맞은 대상 정보"를 꺼내 다음 데미지 처리로 넘기는 준비 단계를 설명한다. 여기부터는 용어가 조금 어려워져서 `01~03`을 읽고 오면 훨씬 쉽다.
 
 ## 빠른 선택 가이드
 

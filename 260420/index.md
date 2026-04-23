@@ -47,6 +47,16 @@ title: 260420 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를
 5. 언리얼 공식 문서를 통해 `Anim Notify`, `Physics Asset`, 충돌/오버랩, 트리거 개념이 엔진 표준 용어로 어떻게 정리되는지 확인한다.
 6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `MonsterBase`, `MonsterAnimInstance`, `ItemBox` 안에서 어떻게 하나의 사망 이후 파이프라인으로 이어지는지 확인한다.
 
+## 2026-04-23 덤프 반영 메모
+
+이번 보강에서는 `260420` 후반부를 몬스터 사망 연출이 아니라 "충돌 프로필, 물리 전환, 드롭 액터, 획득 트리거"까지 포함한 파이프라인으로 다시 묶었다. `Saved\AcademyUtility` 덤프를 보면 이 날짜가 왜 마무리 시스템 설계에 해당하는지가 훨씬 선명하게 보인다.
+
+- `DefaultEngine_FileDump.txt`에는 커스텀 충돌 프로필 `Monster`, `Ragdoll`, `ItemBox`가 모두 정의돼 있고, `Monster` 오브젝트 채널도 따로 잡혀 있다. 즉 랙돌과 드롭 박스는 기존 캐릭터 충돌을 대충 재활용한 것이 아니라, 이 날짜를 위해 분리된 충돌 규칙 위에 올라간다.
+- `MonsterAnimInstance_FileDump.txt`와 `MonsterBase_FileDump.txt`를 같이 보면, `AnimNotify_Death()`가 `Monster->Death()`로 후처리를 넘기고, 그 안에서 `SetCollisionProfileName(TEXT("Ragdoll"))`, `SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true)`, `WakeAllRigidBodies()`, `SetLifeSpan(3.f)`가 이어진다. 그래서 사망은 애니메이션 재생과 물리 전환이 끊어지지 않게 연결된 하나의 핸드오프다.
+- 같은 `MonsterBase_FileDump.txt`는 몬스터가 정리되는 `EndPlay()` 시점에 `SpawnActor<AItemBox>`를 호출한다는 사실도 보여 준다. 즉 보상 박스는 사망 직후 즉시 뿌리는 구조가 아니라, 몬스터 액터 생명주기 종료와 맞물려 생성된다.
+- `ItemBox_FileDump.txt`를 보면 이 액터는 `/Game/Fantastic_Dungeon_Pack/meshes/props/container/SM_PROP_box_dungeon_03` 메시를 쓰고, 충돌 프로필은 `ItemBox`, 획득은 `OnComponentBeginOverlap.AddDynamic(...)`로 받는다. 또한 `StartDropAnimation()`, `FindGroundLocation()`, `EaseOutCubic(...)`, `mSpinSpeed = FRotator(720.0, 1080.0, 0.0)`가 있어, 영상에서 보이는 "튀어올랐다가 바닥에 안착하는 드롭"이 실제로 코드 연출까지 갖춘 상태임을 확인할 수 있다.
+- `Minion_Lane_Melee_Physics_AssetDump.txt`, `Minion_Lane_Ranged_Physics_AssetDump.txt`, `Death_A_AssetDump.txt`, `Death_Front_A_AssetDump.txt`, `SM_PROP_box_dungeon_03_AssetDump.txt`를 보면 근접/원거리 미니언 모두 전용 `PhysicsAsset`을 갖고 있고, 대표 사망 시퀀스 길이도 서로 다르며, 아이템 박스 메시 자체도 커스텀 충돌을 가진다. 즉 `260420`은 단순히 "죽으면 박스 하나 떨어진다"가 아니라, 몬스터 타입별 사망 자산과 드롭 오브젝트 물성까지 정리하는 단계다.
+
 ---
 
 ## 제1장. Monster Death: 사망은 애니메이션 한 줄이 아니라 AI 종료와 상태 정리다

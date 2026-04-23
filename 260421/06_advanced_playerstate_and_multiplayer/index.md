@@ -209,6 +209,28 @@ void AGDHeroCharacter::OnRep_PlayerState()
 - `InitAbilityActorInfo(PS, this)`
   둘을 연결하는 핵심 함수
 
+## UE20252 대응: Character 소유 `ASC`, 데이터 허브 `PlayerState`
+
+`GASDocumentation`은 멀티플레이 정석 구조를 보여 주기 위해 `PlayerState`에 `ASC`와 `AttributeSet`을 둔다.
+하지만 `UE_Academy_Stduy` 덤프를 보면 현재 프로젝트는 의도적으로 더 단순한 쪽에 서 있다.
+
+- `APlayerCharacterGAS`
+  `mASC`, `mAttributeSet`을 직접 소유한다.
+- `InitAbilityActorInfo(this, this)`
+  Owner와 Avatar를 둘 다 Character로 연결한다.
+- `AMainPlayerState`
+  `PDA_PlayerInfo`, `DT_PlayerInfo`를 읽고 결과 값을 캐릭터의 `UPlayerAttributeSet`에 다시 밀어 넣는다.
+
+즉 이 프로젝트의 `PlayerState`는 “ASC 본체 보관소”라기보다,
+`플레이어 데이터 적재와 동기화 허브`에 더 가깝다.
+그래서 현재 구조를 한 줄로 요약하면 아래가 된다.
+
+`전투 시스템 실행은 Character 쪽 ASC가 맡고, 시작 데이터 공급은 PlayerState가 맡는다.`
+
+이 배치는 싱글플레이나 초기 프로토타입에서는 읽기 쉽고 다루기 쉽다.
+다만 나중에 멀티플레이 복제와 지속성까지 강하게 가져가려면,
+`GASDocumentation`처럼 `PlayerState` 소유 구조로 옮길 이유가 생긴다.
+
 ## 이 편의 핵심 정리
 
 이 예제는 멀티플레이 기준 정석 구조를 보여 준다.

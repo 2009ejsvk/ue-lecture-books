@@ -11,6 +11,15 @@ title: 260422 중급 1편 - ManaCost GameplayEffect와 SetByCaller
 이 편에서는 `UGameplayEffect_ManaCost` 생성자 하나를 기준으로, 마나 소모를 왜 직접 `SetMP()` 하지 않고 `GameplayEffect`로 만드는지 정리한다.
 핵심은 `SetByCaller`가 “런타임마다 달라지는 비용”을 안전하게 실어 나르는 방식이라는 점이다.
 
+처음 읽을 때는 아래처럼만 번역해도 충분하다.
+
+- `GameplayEffect`
+  규칙 카드
+- `Modifier`
+  무엇을 어떻게 바꿀지 적는 칸
+- `SetByCaller`
+  실행할 때 나중에 값을 꽂는 입력칸
+
 ## 봐야 할 파일
 
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_ManaCost.h`
@@ -37,6 +46,7 @@ title: 260422 중급 1편 - ManaCost GameplayEffect와 SetByCaller
 생성자 첫 줄에서 가장 먼저 눈에 띄는 건 아래다.
 
 ```cpp
+// 이 Effect는 한 번 적용되고 바로 끝나는 즉발형 규칙이다.
 DurationPolicy = EGameplayEffectDurationType::Instant;
 ```
 
@@ -57,8 +67,11 @@ DurationPolicy = EGameplayEffectDurationType::Instant;
 다음 핵심은 `Modifier`다.
 
 ```cpp
+// 어떤 Attribute를 바꿀지 적는 Modifier 칸을 하나 만든다.
 FGameplayModifierInfo Modifier;
+// 이번 규칙의 대상은 MP다.
 Modifier.Attribute = UBaseAttributeSet::GetMPAttribute();
+// 더하기 규칙을 쓴다. 나중에 음수를 넣으면 실제로는 감소가 된다.
 Modifier.ModifierOp = EGameplayModOp::Additive;
 ```
 
@@ -95,9 +108,11 @@ Modifier.ModifierOp = EGameplayModOp::Additive;
 강의에서 가장 중요한 포인트는 바로 여기다.
 
 ```cpp
+// 실행 시점에 값을 받을 입력칸 이름을 정한다.
 FSetByCallerFloat Caller;
 Caller.DataTag = FGameplayTag::RequestGameplayTag(TEXT("Effect.Mana"));
 
+// ModifierMagnitude가 고정값이 아니라, 위 입력칸 값을 읽게 만든다.
 Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(Caller);
 ```
 
@@ -135,6 +150,7 @@ Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(Caller);
 생성자 마지막 줄은 아주 짧다.
 
 ```cpp
+// 지금까지 만든 규칙을 실제 Effect의 Modifier 목록에 등록한다.
 Modifiers.Add(Modifier);
 ```
 

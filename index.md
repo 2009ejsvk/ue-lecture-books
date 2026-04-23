@@ -16,6 +16,8 @@ title: UE Lecture Books
 - [260407. 이동 속도와 시선 값을 애니메이션으로 연결해 자연스러운 플레이어 움직임을 만드는 기초](./260407/)
 - [260408. 공격 몽타주, 슬롯, 노티파이, 콤보 섹션으로 전투 애니메이션을 조립하는 구조](./260408/)
 - [260409. 공격 판정, 데미지, 이펙트, 사운드, 투사체를 묶어 플레이어 전투를 완성하는 기초](./260409/)
+- [260410. Wraith 투사체, 데칼, Shinbi 스킬 캐스팅 모션으로 공격 표현을 확장하는 날](./260410/)
+- [260413. Mouse Picking, 마법진 지정형 스킬, Geometry Collection으로 위치 기반 파괴 연출을 만드는 날](./260413/)
 - [260414. 몬스터 본체, 감지, 비헤이비어 트리, 블랙보드, 데이터 관리까지 AI 기반을 세우는 날](./260414/)
 - [260415. 몬스터를 스폰하고 순찰시키고 플레이어를 감지하면 추적으로 바꾸는 AI 기초](./260415/)
 - [260416. 추적에서 공격으로 넘어가고 노티파이 시점에 타격하는 몬스터 전투 AI 루프](./260416/)
@@ -39,6 +41,8 @@ title: UE Lecture Books
 - `260407`: `AnimInstance`, `Animation Blueprint`, `Aim Offset`, `GroundLocomotion`, `Blend Space`, 점프 상태 머신을 이용해 플레이어의 이동 속도와 시선 값을 자연스러운 애니메이션으로 바꾸는 문서
 - `260408`: `AnimMontage`, `Slot`, `Notify`, `Combo Section`, `PlayerAnimInstance`, `Animation Template`를 이용해 공격 모션, 콤보 입력 타이밍, 전투 애니메이션 재생 구조를 만드는 문서
 - `260409`: `PlayerTemplateAnimInstance`, 충돌 채널과 프로파일, `Sweep`, `TakeDamage`, 파티클, 사운드, 투사체를 묶어 실제 공격 판정과 피격 반응이 있는 플레이어 전투 파이프라인을 만드는 문서
+- `260410`: `Wraith`, `Muzzle_01`, `ProjectileMovement`, `WraithBullet`, `Decal`, `Layered Blend Per Bone`, `Skill1 Montage`를 이용해 총알 자국과 스킬 캐스팅 모션까지 포함한 공격 표현 구조를 확장하는 문서
+- `260413`: `MainPlayerController`, `GetHitResultUnderCursor`, `ADecalBase`, `Shinbi::Skill1Casting`, `Geometry Collection`, `ApplyExternalStrain`, `GeometryActor`를 이용해 마우스 지정형 스킬과 파괴 연출을 연결하는 문서
 - `260414`: `MonsterBase`, `AIController`, `AIPerception`, `Behavior Tree`, `Blackboard`, `MonsterState`, `DataTable`, `AssetManager`를 이용해 몬스터 AI의 본체, 감지, 판단, 데이터 관리 기반을 세우는 문서
 - `260415`: `SpawnPoint`, `PatrolPath`, `Behavior Tree` 등록, `Perception`, `Move To`를 이용해 몬스터가 월드에 생성되고 순찰하다가 플레이어를 보면 추적하도록 만드는 문서
 - `260416`: `MonsterAnimInstance`, `MonsterTrace Task`, `MonsterAttack Task`, `AnimNotify` 기반 전투 루프를 이용해 추적에서 공격으로 넘어가고 타격 시점을 맞추는 몬스터 전투 문서
@@ -57,6 +61,8 @@ title: UE Lecture Books
 - `260407/index.md`: 2026-04-07 강의 교재
 - `260408/index.md`: 2026-04-08 강의 교재
 - `260409/index.md`: 2026-04-09 강의 교재
+- `260410/index.md`: 2026-04-10 강의 교재
+- `260413/index.md`: 2026-04-13 강의 교재
 - `260414/index.md`: 2026-04-14 강의 교재
 - `260415/index.md`: 2026-04-15 강의 교재
 - `260416/index.md`: 2026-04-16 강의 교재
@@ -66,4 +72,4 @@ title: UE Lecture Books
 - `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 보충 교재
 - `260421/assets/images`: GAS 입문 교재용 이미지 자리
 - `260422/assets/images`: UE20252 실전 GameplayEffect 교재용 이미지 자리
-- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처
+- `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260410/assets/images`, `260413/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처

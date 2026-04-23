@@ -21,9 +21,12 @@ title: 260422 고급 1편 - TargetData와 다음 데미지 이펙트 예고
 
 앞 문서에서 봤듯이 `ShinbiGAS::NormalAttack()`은 히트 결과를 `FGameplayAbilityTargetData_SingleTargetHit`로 만들어 이벤트에 넣어 둔다.
 
+처음엔 `TargetData = 맞은 대상 기록 묶음` 정도로 읽어도 충분하다.
+
 그래서 `UGameplayAbility_Attack` 쪽에서는 그 데이터를 다시 꺼내면 된다.
 
 ```cpp
+// 이벤트 안에 들어 있던 "한 대상 히트 결과"를 다시 꺼낸다.
 FGameplayAbilityTargetData_SingleTargetHit* HitData =
     (FGameplayAbilityTargetData_SingleTargetHit*)(
         TriggerEventData->TargetData.Data[0].Get());
@@ -43,6 +46,7 @@ FGameplayAbilityTargetData_SingleTargetHit* HitData =
 코드 초반에는 아래 같은 방어 코드가 있다.
 
 ```cpp
+// 이미 Ability가 취소됐거나, 이벤트 데이터가 비어 있으면 더 진행하지 않는다.
 if (!mAbilityActive || !TriggerEventData || !TriggerEventData->Target)
 {
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
@@ -64,8 +68,10 @@ if (!mAbilityActive || !TriggerEventData || !TriggerEventData->Target)
 히트 데이터를 얻고 나면, 다음으로 타겟 액터와 타겟 ASC를 확보한다.
 
 ```cpp
+// 히트 결과에서 월드의 실제 타겟 액터를 얻는다.
 AActor* TargetActor = HitData->HitResult.GetActor();
 
+// 그 타겟 액터에 연결된 GAS 본체(ASC)까지 이어서 찾는다.
 UAbilitySystemComponent* TargetASC =
     UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
 ```

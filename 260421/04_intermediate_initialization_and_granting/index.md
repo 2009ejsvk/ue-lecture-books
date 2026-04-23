@@ -198,6 +198,7 @@ void AGDCharacterBase::InitializeAttributes()
 ```cpp
 void AGDCharacterBase::AddStartupEffects()
 {
+    // 시작 Effect도 서버가 한 번만 적용한다.
     if (GetLocalRole() != ROLE_Authority ||
         !AbilitySystemComponent.IsValid() ||
         AbilitySystemComponent->bStartupEffectsApplied)
@@ -205,22 +206,26 @@ void AGDCharacterBase::AddStartupEffects()
         return;
     }
 
+    // 이 시작 Effect들이 어디서 왔는지 알 수 있게 컨텍스트를 만든다.
     FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
     EffectContext.AddSourceObject(this);
 
     for (TSubclassOf<UGameplayEffect> GameplayEffect : StartupEffects)
     {
+        // 목록에 들어 있는 시작 Effect마다 실행용 Spec을 하나 만든다.
         FGameplayEffectSpecHandle NewHandle =
             AbilitySystemComponent->MakeOutgoingSpec(GameplayEffect, GetCharacterLevel(), EffectContext);
 
         if (NewHandle.IsValid())
         {
+            // 그 Spec을 자기 자신에게 적용해 시작 버프/패시브를 켠다.
             AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(
                 *NewHandle.Data.Get(),
                 AbilitySystemComponent.Get());
         }
     }
 
+    // 다시 들어와 중복 적용되지 않도록 표시한다.
     AbilitySystemComponent->bStartupEffectsApplied = true;
 }
 ```
@@ -233,6 +238,34 @@ void AGDCharacterBase::AddStartupEffects()
   시작 버프/패시브
 - `AddCharacterAbilities()`
   시작 Ability 지급
+
+## UE20252 대응: `GameplayEffect` 초기화보다 데이터 로드가 먼저 보인다
+
+`UE_Academy_Stduy`는 `GASDocumentation`의 정석 예제를 그대로 복사한 구조가 아니다.
+덤프를 기준으로 현재 초기화 흐름을 짧게 줄이면 아래와 같다.
+
+1. `APlayerCharacterGAS` 생성자
+   `mASC`와 `mAttributeSet`을 만들고 `AddAttributeSetSubobject`로 등록한다.
+2. `BeginPlay()`
+   `AMainPlayerState::LoadPlayerInfo(mPlayerName)`를 호출한다.
+3. 같은 `BeginPlay()`
+   `InputData`가 들고 있는 `IMC_Default`를 입력 서브시스템에 붙인다.
+4. 같은 `BeginPlay()`
+   `mASC->InitAbilityActorInfo(this, this)`로 Owner/Avatar를 둘 다 Character로 연결한다.
+5. 같은 `BeginPlay()`
+   `mASC->GiveAbility(FGameplayAbilitySpec(UGameplayAbility_Attack::StaticClass(), 1, 0))`로 시작 Ability를 준다.
+
+즉 `UE20252`의 초반부는 아래처럼 읽는 편이 맞다.
+
+- 시작 스탯
+  `DefaultAttributes GameplayEffect`보다 `PDA_PlayerInfo -> DT_PlayerInfo` 로드가 먼저 핵심이다.
+- 시작 Ability
+  `UGameplayAbility_Attack`를 직접 `GiveAbility`로 지급한다.
+- 입력 연결
+  `InputData`와 `IMC_Default`가 별도 축으로 들어와서 GAS와 나란히 맞물린다.
+
+그래서 이 프로젝트는 `InitializeAttributes`, `AddStartupEffects`, `AddCharacterAbilities` 세 함수를 외우는 것보다,
+`데이터 테이블 로드 -> ASC 연결 -> Ability 지급` 순서를 먼저 잡는 것이 훨씬 실전적이다.
 
 ## 이 편의 핵심 정리
 

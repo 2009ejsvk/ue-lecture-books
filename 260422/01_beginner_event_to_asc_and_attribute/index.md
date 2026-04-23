@@ -11,6 +11,16 @@ title: 260422 초급 1편 - 이벤트 공격이 Ability로 들어오는 흐름
 이 편에서는 `ShinbiGAS`에서 만든 공격 이벤트가 `UGameplayAbility_Attack`로 들어와, 결국 `SourceActor`, `SourceASC`, `SourceAttr`를 확보하는 과정까지를 본다.
 즉 “공격 버튼을 눌렀다”가 GAS 세계에서는 어떤 데이터 흐름으로 바뀌는지 잡는 것이 목표다.
 
+처음 읽을 때는 타입 이름을 다 외울 필요 없다.
+이 편에서는 아래 세 가지만 잡아도 충분하다.
+
+- `FGameplayEventData`
+  공격 정보를 담아 보내는 이벤트 상자
+- `SourceASC`
+  이 공격을 쓰는 쪽의 GAS 본체
+- `SourceAttr`
+  그 GAS 본체가 들고 있는 수치 저장소
+
 ## 봐야 할 파일
 
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Player\GAS\ShinbiGAS.cpp`
@@ -18,6 +28,10 @@ title: 260422 초급 1편 - 이벤트 공격이 Ability로 들어오는 흐름
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Player\GAS\PlayerCharacterGAS.h`
 
 ## 전체 흐름 한 줄
+
+`공격 입력 -> 공격 정보를 이벤트 상자에 담음 -> 공격 Ability 호출 -> 내 ASC 찾기 -> 내 AttributeSet 찾기`
+
+코드 이름으로 다시 쓰면 아래 흐름이다.
 
 `NormalAttack() -> FGameplayEventData 작성 -> Ability.Attack 태그 전송 -> UGameplayAbility_Attack 발동 -> SourceActor / SourceASC / SourceAttr 확보`
 
@@ -28,17 +42,24 @@ title: 260422 초급 1편 - 이벤트 공격이 Ability로 들어오는 흐름
 대신 충돌로 얻은 히트 결과를 `FGameplayEventData`에 담아 GAS 쪽으로 보낸다.
 
 ```cpp
+// GAS에 보낼 "공격 이벤트 상자"를 만든다.
 FGameplayEventData EventData;
 
+// 누가 맞았는지 기록한다.
 EventData.Target = HitActor;
+// 누가 이 이벤트를 만들었는지 기록한다.
 EventData.Instigator = this;
+// 이 이벤트가 "공격"이라는 뜻의 태그를 붙인다.
 EventData.EventTag = FGameplayTag::RequestGameplayTag(TEXT("Ability.Attack"));
 
+// 히트 결과를 GAS 표준 TargetData 형태로 감싼다.
 FGameplayAbilityTargetData_SingleTargetHit* TargetData =
     new FGameplayAbilityTargetData_SingleTargetHit(Hit);
 
+// 방금 만든 히트 데이터를 이벤트 상자 안에 넣는다.
 EventData.TargetData.Add(TargetData);
 
+// 이벤트를 이 액터에게 보내서, 태그에 연결된 Ability가 시작되게 한다.
 UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(
     this,
     EventData.EventTag,
@@ -69,11 +90,14 @@ UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(
 `UGameplayAbility_Attack` 생성자를 보면 아래처럼 트리거를 등록한다.
 
 ```cpp
+// "Ability.Attack" 태그가 오면
 FAbilityTriggerData TriggerData;
 
+// 이 Ability를 자동으로 깨우겠다고 등록한다.
 TriggerData.TriggerTag = FGameplayTag::RequestGameplayTag(TEXT("Ability.Attack"));
 TriggerData.TriggerSource = EGameplayAbilityTriggerSource::GameplayEvent;
 
+// 방금 만든 트리거 규칙을 Ability 쪽 목록에 추가한다.
 AbilityTriggers.Add(TriggerData);
 ```
 
@@ -93,8 +117,11 @@ AbilityTriggers.Add(TriggerData);
 그래서 코드도 먼저 소스 액터와 소스 ASC를 가져온다.
 
 ```cpp
+// 지금 이 Ability를 실제로 쓰고 있는 아바타 액터를 찾는다.
 AActor* SourceActor = GetAvatarActorFromActorInfo();
+// 그 액터에 연결된 GAS 본체(ASC)를 찾는다.
 UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+// ASC가 들고 있는 수치 저장소(AttributeSet)를 읽기 전용으로 꺼낸다.
 const UBaseAttributeSet* SourceAttr = SourceASC->GetSet<UBaseAttributeSet>();
 ```
 
@@ -114,6 +141,7 @@ const UBaseAttributeSet* SourceAttr = SourceASC->GetSet<UBaseAttributeSet>();
 이 흐름이 가능한 이유는 `PlayerCharacterGAS`가 `IAbilitySystemInterface`를 상속받고, ASC를 리턴하는 함수를 구현해 두었기 때문이다.
 
 ```cpp
+// 이 캐릭터의 ASC가 mASC라는 사실을 엔진과 GAS에 알려 준다.
 virtual UAbilitySystemComponent* GetAbilitySystemComponent() const
 {
     return mASC;
@@ -131,12 +159,14 @@ virtual UAbilitySystemComponent* GetAbilitySystemComponent() const
 즉 아래는 에러가 난다.
 
 ```cpp
+// 읽기 전용(const)로 반환되는 값을 일반 포인터로 받으려 해서 에러가 난다.
 UBaseAttributeSet* SourceAttr = SourceASC->GetSet<UBaseAttributeSet>();
 ```
 
 반면 아래처럼 읽기 전용으로 받으면 문제없다.
 
 ```cpp
+// 값을 읽기만 할 거라면 const 포인터로 받으면 된다.
 const UBaseAttributeSet* SourceAttr = SourceASC->GetSet<UBaseAttributeSet>();
 ```
 

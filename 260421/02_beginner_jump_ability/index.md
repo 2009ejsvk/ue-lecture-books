@@ -280,6 +280,28 @@ void UGDGA_CharacterJump::CancelAbility(...)
 
 즉 GAS는 행동을 무조건 새로 만드는 게 아니라, 기존 언리얼 함수도 `Ability 생명주기` 안에 넣어서 관리할 수 있다.
 
+## UE20252 대응: 점프는 일반 입력, 공격이 첫 GAS 루트다
+
+`UE_Academy_Stduy` 덤프를 보면 이 프로젝트는 아직 `Jump Ability`를 따로 만들지 않았다.
+대신 `InputData`가 `/Game/Input/IMC_Default`와 `IA_Move`, `IA_Rotation`, `IA_Jump`, `IA_Attack`, `IA_Skill1`를 묶고,
+캐릭터는 그 입력을 실제 동작에 연결하는 쪽이 더 강하다.
+
+즉 이 문서의 `Jump Ability`는 “GAS 생명주기를 가장 쉽게 배우는 교본”으로 읽으면 좋고,
+실제 프로젝트 대응은 아래처럼 보는 편이 맞다.
+
+- `IA_Jump`
+  여전히 일반 점프 입력 축에 가깝다.
+- `IA_Attack`
+  실전 첫 GAS 루트다.
+- `ShinbiGAS::NormalAttack()`
+  타격 판정을 만들고 `FGameplayEventData`에 `Ability.Attack` 태그를 담아 보낸다.
+- `UGameplayAbility_Attack`
+  그 이벤트를 받아 실제 Ability 활성화를 수행한다.
+
+그래서 `UE20252`에서는 `점프`보다 `공격`이 GAS 입문 예제로 더 실전적이다.
+이 편에서 익힌 `CanActivateAbility -> ActivateAbility -> CommitAbility` 감각을
+다음 편부터는 `Attack` 흐름에 대입해 읽으면 연결이 훨씬 잘 된다.
+
 ## 이 편에서 꼭 외울 함수 다섯 개
 
 - `CanActivateAbility()`

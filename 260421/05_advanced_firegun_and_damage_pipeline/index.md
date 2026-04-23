@@ -270,6 +270,36 @@ void UGDDamageExecCalculation::Execute_Implementation(...)
 4. `AttributeSet`
    실제 HP 감소와 후처리 담당
 
+## UE20252 대응: `ShinbiGAS`는 이벤트 기반으로 Attack Ability를 깨운다
+
+`GASDocumentation`의 `FireGun`은 `AbilityTask`, `ExecutionCalculation`, `Damage 메타 Attribute`까지 포함한 정석형 공격 파이프라인이다.
+반면 `UE_Academy_Stduy`의 현재 공격 흐름은 더 짧고, 대신 프로젝트에 맞는 연결 지점이 선명하다.
+
+핵심 흐름은 아래다.
+
+1. `ShinbiGAS::InputAttack()`
+   애님 인스턴스에 공격 재생을 요청한다.
+2. `ShinbiGAS::NormalAttack()`
+   캡슐 스윕으로 실제 타격 대상을 찾는다.
+3. `FGameplayEventData`
+   `Ability.Attack` 태그와 `FGameplayAbilityTargetData_SingleTargetHit`를 담아 만든다.
+4. `SendGameplayEventToActor()`
+   이벤트로 `UGameplayAbility_Attack`를 깨운다.
+5. `UGameplayAbility_Base`
+   `UGameplayEffect_ManaCost` 스펙을 만들고 `SetByCaller(Effect.Mana)`로 `MP` 코스트를 적용한다.
+
+즉 `UE20252`에서는 아직 `FireGun`처럼 큰 계산 파이프라인이 완성된 상태는 아니다.
+대신 아래 두 축이 먼저 잡혀 있다.
+
+- 공격 판정 전달
+  `Sweep -> GameplayEvent -> TargetData`
+- 코스트 적용
+  `MakeOutgoingGameplayEffectSpec -> SetByCaller -> ApplyGameplayEffectSpecToSelf`
+
+나중에 이 프로젝트에 실제 데미지 계산을 더 붙인다면,
+`UGDGA_FireGun`의 `ExecutionCalculation` 자리에 해당하는 부분을 새로 넣고
+최종 반영은 `AttributeSet::PostGameplayEffectExecute()` 쪽으로 모으는 식으로 확장하게 된다.
+
 ## 이 편의 핵심 정리
 
 `Ability는 발동 절차를 맡고, ExecutionCalculation은 계산을 맡고, AttributeSet은 최종 반영과 후처리를 맡는다.`

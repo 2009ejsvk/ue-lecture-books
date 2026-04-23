@@ -18,8 +18,23 @@ title: 260421 GASDocumentation으로 배우는 GAS 분권형 교재
 
 핵심 편에는 실제 C++ 코드 발췌와 함께, 초심자가 따라 읽기 쉽도록 설명용 주석을 다시 달아 두었다.
 
-`GASDocumentation` 예제의 개념을 실제 `UE20252` 프로젝트 코드로 옮겨 읽는 후속 보충편은
+2026-04-23 기준으로는 `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility` 덤프를 반영해,
+각 편 뒤쪽에 `UE20252 대응` 메모를 추가했다.
+즉 이 날짜 문서는 `GASDocumentation`으로 개념을 배우고, 바로 이어서 `UE_Academy_Stduy`의 실제 배치와 비교해 보는 구조다.
+
+`GameplayEffect` 적용을 더 좁고 실습형으로 파고드는 후속 보충편은
 [260422. UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 교재](../260422/)에 따로 정리했다.
+
+## 이번 개정에서 추가된 실제 프로젝트 축
+
+- `APlayerCharacterGAS`
+  `ASC`와 `AttributeSet`을 직접 소유하고 `InitAbilityActorInfo(this, this)`를 호출한다.
+- `AMainPlayerState`
+  `PDA_PlayerInfo -> DT_PlayerInfo`를 로드하고, 데이터를 `UPlayerAttributeSet`에 미러링한다.
+- `UGameplayAbility_Attack`, `UGameplayAbility_Base`
+  `Ability.Attack` 이벤트와 `Effect.Mana` 코스트 적용을 실제 코드 흐름으로 보여 준다.
+- `Saved\AcademyUtility` 덤프
+  코드 원본을 직접 뒤지지 않아도 `260421` 각 편에서 필요한 대응 지점을 빠르게 확인할 수 있다.
 
 ## 이 교재를 읽는 가장 좋은 순서
 
@@ -36,6 +51,8 @@ title: 260421 GASDocumentation으로 배우는 GAS 분권형 교재
 
 ## 초급
 
+처음 읽는다면 아래 설명에서 괄호 밖 한글 문장만 먼저 읽어도 충분하다.
+
 - [01. GAS란 무엇인가](./01_beginner_gas_overview/)
   GAS의 목적과 다섯 핵심 이름 `ASC`, `AttributeSet`, `GameplayAbility`, `GameplayEffect`, `GameplayTag`를 처음부터 정리한다.
 
@@ -45,18 +62,18 @@ title: 260421 GASDocumentation으로 배우는 GAS 분권형 교재
 ## 중급
 
 - [03. AttributeSet과 GameplayEffect 후처리](./03_intermediate_attributes_and_effects/)
-  `UGDAttributeSetBase`를 기준으로 `FGameplayAttributeData`, `ATTRIBUTE_ACCESSORS`, `Damage` 메타 Attribute, `PreAttributeChange`, `PostGameplayEffectExecute`를 정리한다.
+  체력/마나 같은 숫자가 어디 저장되고, 값이 바뀐 뒤 어디서 반응하는지 설명한다. 세부 이름은 `FGameplayAttributeData`, `PreAttributeChange`, `PostGameplayEffectExecute` 정도만 따라가면 된다.
 
 - [04. 초기화와 Ability 지급](./04_intermediate_initialization_and_granting/)
-  `GDCharacterBase.cpp`를 기준으로 `InitializeAttributes`, `AddStartupEffects`, `AddCharacterAbilities`, 그리고 특수 상황에서만 직접 `SetHealth`를 쓰는 이유를 설명한다.
+  시작 스탯, 시작 버프, 시작 Ability를 언제 넣는지 설명한다. 함수 이름은 `InitializeAttributes`, `AddStartupEffects`, `AddCharacterAbilities`다.
 
 ## 고급
 
 - [05. FireGun과 데미지 파이프라인](./05_advanced_firegun_and_damage_pipeline/)
-  `UGDGA_FireGun`과 `UGDDamageExecCalculation`을 기준으로, 공격 Ability가 어떻게 `SetByCaller -> ExecutionCalculation -> Damage 메타 Attribute -> Health 감소`로 이어지는지 설명한다.
+  공격 Ability가 데미지 계산과 체력 감소로 이어지는 큰 흐름을 설명한다. `SetByCaller`, `ExecutionCalculation`은 그 과정에서 쓰는 고급 도구다.
 
 - [06. PlayerState, Owner/Avatar, 멀티플레이 구조](./06_advanced_playerstate_and_multiplayer/)
-  왜 이 예제가 `PlayerState`에 ASC를 두는지, `PossessedBy`, `OnRep_PlayerState`, `InitAbilityActorInfo(PS, this)`가 어떤 의미인지 정리한다.
+  왜 이 예제가 `PlayerState`에 ASC를 두는지, 그리고 캐릭터와 플레이어 상태가 GAS에서 어떻게 연결되는지 정리한다.
 
 ## 부록
 

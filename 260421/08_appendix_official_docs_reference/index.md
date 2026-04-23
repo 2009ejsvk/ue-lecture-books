@@ -76,6 +76,22 @@ title: 260421 부록 - 언리얼 공식 문서 참고 가이드
 
 이 조합은 ASC의 역할, 복제/예측, 태그 기반 상태 관리를 멀티플레이 구조와 함께 읽기에 좋다.
 
+## UE20252 덤프와 같이 보는 로컬 기준점
+
+공식 문서가 “개념의 기준점”이라면,
+`D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility` 덤프는 “우리 프로젝트가 그 개념을 어디에 배치했는지”를 보여 주는 기준점이다.
+
+- `PlayerCharacterGAS_SourceDump.txt`
+  `InitAbilityActorInfo(this, this)`와 `GiveAbility`가 실제로 어디서 호출되는지 본다.
+- `ShinbiGAS_SourceDump.txt`
+  `Ability.Attack` 이벤트가 어떤 타이밍에 만들어지는지 본다.
+- `GameplayAbility_Base_SourceDump.txt`
+  `MakeOutgoingGameplayEffectSpec`, `SetByCaller`, `ApplyGameplayEffectSpecToSelf`가 한 번에 연결되는 예시를 본다.
+- `GameplayEffect_ManaCost_SourceDump.txt`
+  `Effect.Mana` 태그가 실제 `MP` 수정으로 이어지는 모습을 본다.
+- `DefaultGameplayTags_GameplayTagsDump.txt`
+  프로젝트에 등록된 태그가 정말 `Ability.Attack`, `Effect.Mana`인지 빠르게 확인한다.
+
 ## 버전 참고
 
 이번 교재는 예제 프로젝트와 현재 공식 문서를 같이 읽는 구조라서, 문서 표현이 조금 다르게 보일 수 있다.
