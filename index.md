@@ -24,7 +24,19 @@ title: UE Lecture Books
 - [260417. 비전투 대기와 순찰을 반복하는 AI를 만들고 순찰 버그를 디버깅하는 날](./260417/)
 - [260420. 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를 떨어뜨린 뒤 획득까지 이어지는 마무리](./260420/)
 - [260421. GASDocumentation 예제와 Epic 공식 문서를 함께 읽으며 Gameplay Ability System을 초급, 중급, 고급으로 나눠 배우는 분권형 교재](./260421/)
+  - [01. GAS란 무엇인가](./260421/01_beginner_gas_overview/)
+  - [02. Jump Ability로 보는 GAS 생명주기](./260421/02_beginner_jump_ability/)
+  - [03. AttributeSet과 GameplayEffect 후처리](./260421/03_intermediate_attributes_and_effects/)
+  - [04. 초기화와 Ability 지급](./260421/04_intermediate_initialization_and_granting/)
+  - [05. FireGun과 데미지 파이프라인](./260421/05_advanced_firegun_and_damage_pipeline/)
+  - [06. PlayerState, Owner/Avatar, 멀티플레이 구조](./260421/06_advanced_playerstate_and_multiplayer/)
+  - [07. GAS 함수 치트시트와 추천 파일 순서](./260421/07_appendix_cheatsheet/)
+  - [08. 언리얼 공식 문서 참고 가이드](./260421/08_appendix_official_docs_reference/)
 - [260422. UE20252 실전 프로젝트에 GameplayEffect와 ManaCost 파이프라인을 실제로 붙이며 GAS를 체감하는 보충 교재](./260422/)
+  - [01. 이벤트 공격이 Ability로 들어오는 흐름](./260422/01_beginner_event_to_asc_and_attribute/)
+  - [02. ManaCost GameplayEffect와 SetByCaller](./260422/02_intermediate_manacost_effect_and_setbycaller/)
+  - [03. Spec 적용과 PostGameplayEffectExecute](./260422/03_intermediate_spec_apply_and_post_execute/)
+  - [04. TargetData와 다음 데미지 이펙트 예고](./260422/04_advanced_targetdata_and_damage_preview/)
 
 ## 읽는 방식
 
