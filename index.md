@@ -42,7 +42,11 @@ title: UE Lecture Books
   - [01. GAS 공격 파이프라인 완성](./260423/01_intermediate_gas_attack_completion/)
   - [02. GameplayCue 적용과 타격 연출 분리](./260423/02_intermediate_gameplaycue_application/)
   - [03. MonsterGAS에 공격 파이프라인 적용](./260423/03_advanced_monster_attack_gas_application/)
-- [260424. AcademyUtility 플러그인으로 블루프린트, C++ 클래스, GameplayTags, 레벨 배치를 덤프해 교재 보강 재료를 모으는 부록](./260424/)
+- [260424. UE20252 실전 프로젝트에서 MonsterGAS 사망 처리, 커스텀 ASC 설계, AbilityTask 전환, AcademyUtility 부록까지 이어지는 보충 교재](./260424/)
+  - [01. MonsterGAS 죽음 처리와 AttributeSet 콜백 설계](./260424/01_intermediate_monster_death_gas_application/)
+  - [02. 커스텀 AbilitySystemComponent와 ManaCost 구조 정리](./260424/02_intermediate_custom_abilitysystemcomponent_and_mana_cost/)
+  - [03. AbilityTask와 몽타주 재생 책임 옮기기](./260424/03_advanced_abilitytask_and_montage_ability_playback/)
+  - [04. AcademyUtility 덤프 워크플로 부록](./260424/04_appendix_academyutility_dump_workflow/)
 
 ## 최근 개정 포인트
 
@@ -52,7 +56,7 @@ title: UE Lecture Books
 - `260420`: `Death()`, `EndPlay()`, `ItemBox` 후반 파이프라인이 현재 `MonsterGAS`에서도 어디까지 이어지는지 추적 메모를 추가했다.
 - `260422`: 실전 GAS 보충 교재에 5편을 추가해 `Damage GameplayEffect`와 `GameplayCue`까지 전체 흐름을 닫았다.
 - `260423`: 플레이어 공격 GAS를 `GameplayCue`와 `MonsterGAS`까지 확장하는 3편을 추가해 `Ability.Attack -> Damage -> Cue -> Monster AI` 흐름을 한 날짜로 묶었다.
-- `260424`: `AcademyUtility` 명령 선택 가이드, 산출물 분류, 추가 덤프 추천 경로를 담은 부록을 새로 추가했다.
+- `260424`: `MonsterGAS` 사망 처리 진입점, 커스텀 `AbilitySystemComponent` 설계, `AbilityTask`와 몽타주 전환 방향, `AcademyUtility` 부록까지 4편 구조로 새로 정리했다.
 
 ## 읽는 방식
 
@@ -80,7 +84,7 @@ title: UE Lecture Books
 - `260421`: `GASDocumentation` 예제 프로젝트를 기준으로 `ASC`, `AttributeSet`, `GameplayAbility`, `GameplayEffect`, `GameplayTag`를 처음부터 다시 정리하고, 이를 `초급`, `중급`, `고급`, `부록`으로 나눠 `GDGA_CharacterJump`, `GDGA_FireGun`, `GDAttributeSetBase`, `GDDamageExecCalculation`, `GDPlayerState`까지 단계적으로 읽는 문서. Epic 공식 문서 연결과 별도 공식 문서 참고 가이드도 포함한다.
 - `260422`: `UE20252` 실제 프로젝트 코드로 돌아와 `ShinbiGAS`, `GameplayAbility_Attack`, `GameplayAbility_Base`, `GameplayEffect_ManaCost`, `GameplayEffect_Damage`, `GameplayCueNotify_StaticBase`, `BaseAttributeSet`을 중심으로 `GameplayEvent -> ManaCost GameplayEffect -> SetByCaller -> ApplyGameplayEffectSpecToSelf -> ApplyGameplayEffectSpecToTarget -> PostGameplayEffectExecute -> GameplayCue` 흐름을 체감하는 보충 문서
 - `260423`: `GameplayAbility_Attack`, `GameplayEffect_Damage`, `GameplayCueNotify_StaticBase`, `MonsterGAS`, `MonsterGASController`, `MonsterNormalGAS_Warrior`, `BTTask_TraceGAS`, `BTTask_AttackGAS`를 중심으로 `GAS 공격 완성 -> GameplayCue 타격 연출 -> MonsterGAS 전투 적용`까지 이어지는 보충 문서
-- `260424`: `AcademyUtilityPlugin`의 `Academy.Dump.Selected`, `Academy.Dump.Path`, `Academy.Dump.GameplayTags`, `Academy.Dump.Level`, `Academy.Generate.*`를 기준으로 실제 문서 보강용 덤프 워크플로를 정리하고, 어떤 산출물을 어떤 순서로 읽어야 하는지 설명하는 부록 문서
+- `260424`: `BaseAttributeSet`, `MonsterGAS`, `MonsterAttributeSet`, `GameplayAbility_Base`, `GameplayEffect_ManaCost`, `GameplayEffect_CoolDown`, `PlayerAnimInstance`, `PlayerTemplateAnimInstance`, `AcademyUtilityPlugin`을 중심으로 사망 처리 진입점, 커스텀 ASC 구조, AbilityTask 전환, 덤프 워크플로를 함께 정리하는 문서
 
 ## 저장소 구조
 
@@ -102,9 +106,9 @@ title: UE Lecture Books
 - `260421/index.md`: 2026-04-21 GASDocumentation 기반 GAS 입문 교재
 - `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 및 Damage/Cue 보충 교재
 - `260423/index.md`: 2026-04-23 UE20252 실전 GAS 공격 완성, GameplayCue, MonsterGAS 연결 보충 교재
-- `260424/index.md`: 2026-04-24 AcademyUtility 덤프 워크플로 부록
+- `260424/index.md`: 2026-04-24 MonsterGAS 사망 처리, 커스텀 ASC, AbilityTask, AcademyUtility 부록 교재
 - `260421/assets/images`: GAS 입문 교재용 이미지 자리
 - `260422/assets/images`: UE20252 실전 GameplayEffect 교재용 이미지 자리
 - `260423/assets/images`: UE20252 실전 GAS 공격 완성, GameplayCue, MonsterGAS 교재용 이미지 자리
-- `260424/assets/images`: AcademyUtility 부록용 이미지 자리
+- `260424/assets/images`: 260424 교재용 이미지 자리
 - `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260410/assets/images`, `260413/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처

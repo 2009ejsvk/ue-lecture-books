@@ -4,7 +4,7 @@ title: 260423 고급 1편 - MonsterGAS에 공격 파이프라인 적용
 
 # 고급 1편. MonsterGAS에 공격 파이프라인 적용
 
-[이전: 중급 2편](../02_intermediate_gameplaycue_application/) | [허브](../)
+[이전: 중급 2편](../02_intermediate_gameplaycue_application/) | [허브](../) | [다음: 260424 중급 1편](../../260424/01_intermediate_monster_death_gas_application/)
 
 ## 이 편의 목표
 

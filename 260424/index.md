@@ -1,185 +1,100 @@
 ---
-title: 260424 AcademyUtility로 덤프를 모아 교재를 보강하는 부록
+title: 260424 UE20252 실전 프로젝트에서 MonsterGAS 사망 처리, 커스텀 ASC 설계, AbilityTask 전환을 다루는 교재
 ---
 
-# 260424 AcademyUtility로 덤프를 모아 교재를 보강하는 부록
+# 260424 UE20252 실전 프로젝트에서 MonsterGAS 사망 처리, 커스텀 ASC 설계, AbilityTask 전환을 다루는 교재
 
 ## 문서 개요
 
-이 문서는 `UE_Academy_Stduy` 프로젝트에 넣어 둔 `AcademyUtilityPlugin`을 기준으로,
-강의 교재를 보강할 때 필요한 자료를 어떻게 빠르게 수집하는지 정리한 부록이다.
+이 문서는 `260424_1_몬스터 죽음 GAS 적용`, `260424_2_사용자 정의 AbilitySystemComponent와 소모 마나 지정`, `260424_3_AbilityTask와 애니메이션 몽타주 Ability 재생` 세 강의를 기준으로,
+`260421 ~ 260423`에서 만들었던 GAS 플레이어/몬스터 전투 흐름을 한 단계 더 구조화하는 과정을 다시 정리한 보충 교재다.
 
-기존 날짜 교재가 `강의 내용 -> 실제 코드/애셋 설명` 쪽에 가까웠다면,
-이번 부록은 그 문서를 보강하기 위해 `어떤 명령으로 무엇을 덤프하고, 어떤 파일을 읽으면 되는가`를 정리한다.
+`260423`이 `Damage GameplayEffect`, `GameplayCue`, `MonsterGAS 공격 연결`까지 닫아 두는 날이었다면,
+`260424`는 그 다음 단계로 아래 세 질문을 한 번에 다루는 날이라고 보면 된다.
 
-핵심 흐름은 아래 한 줄로 요약할 수 있다.
+- HP가 0이 되었을 때, 사망 처리의 진입점은 `TakeDamage()`가 아니라 어디에 두어야 하는가
+- Ability를 누가 가지고 있고 언제 지급하는지, 왜 `ASC` 설계가 중요해지는가
+- 지금 `AnimInstance`가 들고 있는 몽타주 재생 책임을 왜 나중에는 `AbilityTask`로 옮기려 하는가
 
-`대상 선택 -> Dump 명령 실행 -> Saved/AcademyUtility 산출물 확인 -> 필요한 파일만 골라 문서에 반영`
+이번 날짜의 핵심은 아래 한 줄로 요약할 수 있다.
 
-## 이 문서를 만드는 데 사용한 자료
+`AttributeSet 후처리로 사망을 감지 -> Actor별 죽음 처리 경로를 분기 -> Ability 공통 베이스와 ASC 구조를 정리 -> 몽타주 재생 책임을 AbilityTask 쪽으로 옮길 준비`
 
-- `D:\UnrealProjects\UE_Academy_Stduy\Plugins\AcademyUtilityPlugin\README_KR.txt`
-- `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\README_KR_FileDump.txt`
-- `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\AcademyUtility_FileDump.txt`
-- `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility\DumpPath_Summary.txt`
+코드 이름으로 다시 쓰면 아래 흐름이다.
 
-## 왜 이 부록이 필요한가
+`BaseAttributeSet::PostGameplayEffectExecute()에서 HP 변화를 받음 -> MonsterGAS::Death() / EndPlay() 같은 후반 처리와 연결할 구조를 고민 -> GameplayAbility_Base가 ManaCost, CoolDown, 공통 활성화 규칙을 품음 -> 이후 AbilityTask_PlayMontageAndWait로 재생/완료/취소를 Ability 안에서 닫는 방향을 설계`
 
-- `AcademyUtility`는 블루프린트, 네이티브 C++ 클래스, AI 자산, `GameplayTags` 설정, 레벨 배치까지 한 폴더에 모아 준다.
-- `Academy.Dump.Path`가 추가되면서 이름 모호성 없이 `/Game/...`, `/Script/...`, 일반 파일 경로를 한 번에 섞어 덤프할 수 있게 됐다.
-- `Academy.Generate.Header`, `Academy.Generate.CppDraft`까지 있어서 블루프린트를 읽을 때 구조 초안을 빠르게 얻을 수 있다.
-- 즉 이 플러그인은 단순한 "파일 복사기"가 아니라, 교재 집필용 스냅샷 생성 도구에 가깝다.
+즉 `260424`는 "지금 당장 완성된 기능을 쓰는 날"이면서 동시에, `현재 branch를 다음 단계로 어떻게 옮길 것인가`를 보여 주는 전환점이다.
 
-## 명령 선택 가이드
+## 이 교재를 만드는 데 사용한 자료
 
-- `Academy.Dump.Selected`
-  지금 에디터에서 선택한 대상 하나를 빨리 확인할 때 가장 편하다.
-- `Academy.Dump.List`
-  이름 목록을 한 번에 넣어 처리할 때 쓴다. 같은 이름이 여러 개면 모호성 후보가 생길 수 있다.
-- `Academy.Dump.Path`
-  지금 기준으로 가장 중요한 명령이다. `/Game/...`, `/Script/...`, `C:\...`, `@목록파일.txt`를 섞어 재현 가능하게 덤프할 수 있다.
-- `Academy.Dump.GameplayTags`
-  `GameplayTag`는 자산 덤프가 아니라 설정 파일 덤프 대상이므로 따로 이 명령을 써야 한다.
-- `Academy.Dump.Level`
-  레벨 액터 배치 정보가 필요할 때 쓴다. `Academy.Dump.Level All`이면 현재 월드 전체를 본다.
-- `Academy.DumpCoreTargets`
-  기존 몬스터/플레이어 학습 코어 세트를 한 번에 뽑을 때 편하다.
-- `Academy.Generate.Header`
-  블루프린트의 선언 위주 C++ 헤더 프리뷰가 필요할 때 쓴다.
-- `Academy.Generate.CppDraft`
-  블루프린트 그래프를 코드로 옮길 때 시작점 초안이 필요할 때 쓴다.
-- `Academy.Generate.All`
-  노드 덤프, 헤더 프리뷰, C++ 초안을 한 번에 만들고 싶을 때 쓴다.
+- `D:\UE_Academy_Stduy_compressed\260424_1_몬스터 죽음 GAS 적용.mp4`
+- `D:\UE_Academy_Stduy_compressed\260424_2_사용자 정의 AbilitySystemComponent와 소모 마나 지정.mp4`
+- `D:\UE_Academy_Stduy_compressed\260424_3_AbilityTask와 애니메이션 몽타주 Ability 재생.mp4`
+- `D:\UE_Academy_Stduy_compressed\260424_1_몬스터 죽음 GAS 적용.srt`
+- `D:\UE_Academy_Stduy_compressed\260424_2_사용자 정의 AbilitySystemComponent와 소모 마나 지정.srt`
+- `D:\UE_Academy_Stduy_compressed\260424_3_AbilityTask와 애니메이션 몽타주 Ability 재생.srt`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\BaseAttributeSet.h`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\BaseAttributeSet.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\GameplayAbility_Base.h`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\GameplayAbility_Base.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_ManaCost.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_CoolDown.h`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_CoolDown.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Monster\GAS\MonsterGAS.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Monster\GAS\MonsterGASAnimInstance.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Monster\GAS\MonsterAttributeSet.h`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Monster\GAS\MonsterAttributeSet.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Player\GAS\PlayerCharacterGAS.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Player\GAS\ShinbiGAS.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Player\PlayerAnimInstance.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\Player\PlayerTemplateAnimInstance.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Config\DefaultGameplayTags.ini`
 
-## 문서 보강용 추천 워크플로
+## 추천 읽기 순서
 
-1. 대상 하나를 먼저 `Academy.Dump.Selected`나 `Academy.Dump.Path`로 확인한다.
-2. 챕터 하나를 보강할 정도로 대상이 많아지면 경로 목록 텍스트 파일을 만들고 `Academy.Dump.Path @C:\Users\2009e\Desktop\DumpPaths.txt`처럼 실행한다.
-3. `GameplayTag`와 레벨 배치는 일반 자산 덤프와 분리해서 `Academy.Dump.GameplayTags`, `Academy.Dump.Level`로 추가 확보한다.
-4. 결과는 `Saved/AcademyUtility`에서 파일 종류별로 읽는다. 코드 흐름은 `SourceDump`, 블루프린트 구조는 `NodeDump`, AI/데이터 자산은 `AssetDump`, 태그는 `GameplayTagsDump`, 맵 배치는 `LevelDump`를 우선 본다.
-5. `HeaderPreview`, `CppDraft`는 설명 보조 자료로만 쓰고, 실제 구현 근거는 원본 소스나 노드 덤프와 반드시 다시 맞춘다.
+1. 중급 1편: `HP 감소 -> 사망 처리`를 GAS 기준으로 어디에 걸어야 하는지 확인
+2. 중급 2편: `ManaCost`, `CoolDown`, `공용 Ability`, `ASC 설계`가 왜 한 묶음으로 설명되는지 확인
+3. 고급 1편: 지금 `AnimInstance`가 하는 몽타주 재생을 왜 `AbilityTask`로 옮기려 하는지 확인
+4. 부록: 실제 문서 보강이나 역추적이 필요할 때 `AcademyUtility` 덤프 워크플로를 참고
 
-## 바로 쓸 수 있는 예시 명령
+## 중급
 
-```text
-Academy.Dump.Selected
-Academy.Dump.Path "/Script/UE20252.GameplayAbility_Attack"
-Academy.Dump.Path "/Game/Monster/BT_Monster_Normal.BT_Monster_Normal"
-Academy.Dump.Path @C:\Users\2009e\Desktop\DumpPaths.txt
-Academy.Dump.GameplayTags
-Academy.Dump.Level All
-Academy.Generate.All
-```
+- [01. MonsterGAS 죽음 처리와 AttributeSet 콜백 설계](./01_intermediate_monster_death_gas_application/)
+  `PostGameplayEffectExecute`, `MonsterAttributeSet`, `MonsterGAS::Death()`, `EndPlay()`를 연결해 "사망의 진입점"을 다시 정리한다.
 
-## 이번 프로젝트에서 지금 확인한 덤프 상태
+- [02. 커스텀 AbilitySystemComponent와 ManaCost 구조 정리](./02_intermediate_custom_abilitysystemcomponent_and_mana_cost/)
+  `GameplayAbility_Base`, `GameplayEffect_ManaCost`, `mMana`, `mCoolDown`, `GiveAbility`, `InputID` 문맥을 한 번에 묶는다.
 
-현재 `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility`에는 총 `387`개 산출물이 있다.
+## 고급
 
-- `DumpPath_Summary.txt` 기준 입력은 `@C:\Users\2009e\Desktop\DumpPaths.txt`
-- 요청 경로 수는 `294`
-- 결과는 `Dumped=294`, `Missing=0`, `Failed=0`
+- [03. AbilityTask와 몽타주 재생 책임 옮기기](./03_advanced_abilitytask_and_montage_ability_playback/)
+  `PlayerAnimInstance`, `PlayerTemplateAnimInstance`, `ShinbiGAS`, `GameplayEffect_CoolDown`을 기준으로, 현재 몽타주 재생 구조를 AbilityTask 쪽으로 넘길 이유를 설명한다.
 
-파일 종류 분포는 아래처럼 정리된다.
+## 부록
 
-- `AssetDump`: 211
-- `SourceDump`: 39
-- `FileDump`: 30
-- `NodeDump`: 20
-- `HeaderPreview`: 20
-- `CppDraft.h`: 20
-- `CppDraft.cpp`: 20
-- `LiveWidgetDump`: 20
-- `MaterialDump`: 4
-- `GameplayTagsDump`: 1
-- `LevelDump`: 1
-- `Summary`: 1
+- [04. AcademyUtility 덤프 워크플로 부록](./04_appendix_academyutility_dump_workflow/)
+  `Dump.Path`, `Dump.GameplayTags`, `Dump.Level`, `Generate.*`와 `Saved/AcademyUtility` 읽는 순서를 정리한다.
 
-즉 이번 덤프는 블루프린트, C++ 소스, AI 자산, 일반 파일, 태그, 레벨까지 꽤 넓게 확보된 상태다.
+## 빠른 선택 가이드
 
-## 어떤 파일을 먼저 읽어야 하는가
+- `MonsterGAS`도 HP가 0이 되면 언제 `Death()`로 들어가야 하는지 알고 싶다
+  `01`
+- 지금처럼 `PlayerCharacterGAS`와 `MonsterGAS`가 각자 `UAbilitySystemComponent`를 들고 있을 때, 왜 커스텀 ASC 이야기가 나오는지 알고 싶다
+  `02`
+- 현재 `PlayAttack()`, `PlaySkill1()`를 나중에 `AbilityTask_PlayMontageAndWait`로 바꾸는 이유가 궁금하다
+  `03`
+- 교재를 더 보강하려고 코드/블루프린트/태그/레벨 정보를 다시 덤프해야 한다
+  `04`
+- 현재 branch에서 `이미 구현된 것`과 `강의에서 다음 단계로 설계한 것`을 함께 읽고 싶다
+  `01 -> 02 -> 03`
 
-- `*_SourceDump.txt`
-  네이티브 C++ 클래스 흐름을 볼 때 가장 먼저 읽는다. 예: `GameplayAbility_Attack_SourceDump.txt`, `MonsterSpawnPoint_SourceDump.txt`
-- `*_NodeDump.txt`
-  블루프린트 실행 흐름, 핀 연결, 변수, 컴포넌트를 볼 때 쓴다.
-- `*_AssetDump.txt`
-  `BehaviorTree`, `Blackboard`, `DataTable`, `GameplayEffect`, 메시/사운드 같은 자산 기본 구조를 볼 때 쓴다.
-- `*_GameplayTagsDump.txt`
-  현재 프로젝트에 실제 등록된 태그와 리다이렉트를 볼 때 쓴다. `DefaultGameplayTags_GameplayTagsDump.txt`가 대표 예다.
-- `*_LevelDump.txt`
-  맵에 무엇이 어디 배치됐는지 볼 때 쓴다. `Main_LevelDump.txt`가 대표 예다.
-- `*_HeaderPreview.h`, `*_CppDraft.h`, `*_CppDraft.cpp`
-  블루프린트 C++ 전환 감을 잡는 참고 초안이다. 완성 코드로 보면 안 된다.
-- `*_FileDump.txt`
-  `.ini`, `.txt`, 프로젝트 설정 파일, 일반 소스 파일 원문을 그대로 확인할 때 쓴다.
+## 이 날짜의 핵심 목표
 
-일부 블루프린트 대상은 `*_LiveWidgetDump.txt` 같은 보조 출력도 함께 생긴다.
-이 파일은 이름상 블루프린트 시각 구조 보조 자료로 보이지만, 실제 문서 보강에서는 위 핵심 파일들을 먼저 읽는 편이 훨씬 효율적이다.
+이번 날짜의 목표는 아래 세 문장을 체감하는 데 있다.
 
-## 날짜별 교재와 연결되는 대표 타깃
+- `죽음 감지는 AttributeSet 후처리에서 받되, 실제 사망 연출과 정리 작업은 Actor별로 분기해야 한다.`
+- `Ability를 누가 보유하고 언제 지급하는지는 입력 바인딩 문제가 아니라 ASC 구조 문제다.`
+- `현재 branch는 아직 AnimInstance 중심 몽타주 구조지만, 다음 단계는 AbilityTask가 재생/완료/취소를 가져가는 구조다.`
 
-- `260414`
-  `BT_Monster_Normal`, `BB_Monster_Base`, `BB_Monster_Normal`, `DT_MonsterInfo`, `MonsterBase`, `MonsterController`
-- `260415`
-  `MonsterSpawnPoint`, `BTTask_Patrol`, `BTTask_MonsterTrace`
-- `260416`
-  `MonsterAnimInstance`, `BTTask_MonsterAttack`, 몬스터 애님 블루프린트
-- `260420`
-  `ItemBox`, 몬스터 사망 후반 처리 관련 네이티브 클래스와 자산
-- `260421`
-  `PlayerCharacterGAS`, `ShinbiGAS`, `GameplayAbility_Base`, `GameplayEffect_ManaCost`, `BaseAttributeSet`, `PlayerAttributeSet`, `MainPlayerState`
-- `260422`
-  `GameplayAbility_Attack`, `DefaultGameplayTags.ini`, `GameplayCue`/`Damage` 관련 추가 덤프
-
-## 지금 덤프에 이미 들어 있는 대표 결과
-
-- `GameplayAbility_Attack_SourceDump.txt`
-- `GameplayAbility_Base_SourceDump.txt`
-- `BaseAttributeSet_SourceDump.txt`
-- `PlayerCharacterGAS_SourceDump.txt`
-- `ShinbiGAS_SourceDump.txt`
-- `DefaultGameplayTags_GameplayTagsDump.txt`
-- `BT_Monster_Normal_AssetDump.txt`
-- `MonsterBase_SourceDump.txt`
-- `MonsterController_SourceDump.txt`
-- `MonsterSpawnPoint_SourceDump.txt`
-- `BTTask_MonsterTrace_SourceDump.txt`
-- `BTTask_MonsterAttack_SourceDump.txt`
-- `Main_LevelDump.txt`
-- `AcademyUtility_FileDump.txt`
-
-## 이번 개정에서 추가로 뽑아두면 좋은 경로
-
-현재 `Saved/AcademyUtility`에는 최신 `MonsterGAS` 라인과 `Damage/Cue` 라인의 덤프가 일부 비어 있다.
-이번 보강 이후 다음 경로를 `Academy.Dump.Path`로 추가 확보해 두면 이후 문서 작업이 훨씬 쉬워진다.
-
-```text
-/Script/UE20252.MonsterGAS
-/Script/UE20252.MonsterGASController
-/Script/UE20252.MonsterAttributeSet
-/Script/UE20252.MonsterNormalGAS
-/Script/UE20252.MonsterNormalGAS_Warrior
-/Script/UE20252.MonsterNormalGAS_Gunner
-/Script/UE20252.BTTask_PatrolGAS
-/Script/UE20252.BTTask_TraceGAS
-/Script/UE20252.BTTask_AttackGAS
-/Script/UE20252.GameplayEffect_Damage
-/Script/UE20252.GameplayCueNotify_StaticBase
-/Game/Monster/BT_MonsterGAS_Normal.BT_MonsterGAS_Normal
-/Game/Monster/ABP_MonsterGAS_MinionWarrior.ABP_MonsterGAS_MinionWarrior
-/Game/Monster/ABP_MonsterGAS_MinionGunner.ABP_MonsterGAS_MinionGunner
-/Game/Monster/ABP_MonsterGASNormal.ABP_MonsterGASNormal
-```
-
-## 주의할 점
-
-- `Academy.Generate.*`는 변환기라기보다 시작점 생성기다. 설명용 초안으로만 써야 한다.
-- `Academy.Dump.List`는 이름 모호성이 생길 수 있다. 문서 재현성을 중시하면 `Academy.Dump.Path`가 더 안전하다.
-- `GameplayTag` 정보는 자산 덤프가 아니라 설정 덤프다. `Academy.Dump.GameplayTags`를 빼먹으면 태그 문서가 비게 된다.
-- 레벨 배치 덤프는 "어디에 무엇이 놓였는가"를 보여 주지만, 액터 내부 로직까지 대신 설명해 주지는 않는다.
-
-## 권장 과제
-
-1. `260415`나 `260422` 한 챕터를 골라 필요한 타깃만 경로 목록으로 정리하고 `Academy.Dump.Path @파일` 방식으로 다시 덤프해 본다.
-2. 같은 대상을 `Academy.Dump.List`와 `Academy.Dump.Path`로 각각 뽑아 보고, 어떤 쪽이 문서 재현성에 더 유리한지 비교해 본다.
-3. `DefaultGameplayTags_GameplayTagsDump.txt`와 `Main_LevelDump.txt`를 함께 읽고, "코드/자산만으로는 안 보이는 정보"가 무엇인지 따로 메모해 본다.
+즉 `260424`는 `260423`의 후속편이면서, 이후 `Skill2`, `CoolDown`, `Custom ASC`, `AbilityTask` 확장을 읽기 위한 설계 기준점을 마련하는 날짜다.
