@@ -288,6 +288,11 @@ void UGDDamageExecCalculation::Execute_Implementation(...)
 5. `UGameplayAbility_Base`
    `UGameplayEffect_ManaCost` 스펙을 만들고 `SetByCaller(Effect.Mana)`로 `MP` 코스트를 적용한다.
 
+강의 후반 코드 화면에서는 `ShinbiGAS`가 `FGameplayEventData`를 만들면서
+"공격 Ability를 깨우는 이벤트 묶음"을 구성하는 장면이 그대로 보인다.
+
+![ShinbiGAS에서 FGameplayEventData를 준비하는 장면](../assets/images/shinbigas-gameplay-event-data.jpg)
+
 즉 `UE20252`에서는 아직 `FireGun`처럼 큰 계산 파이프라인이 완성된 상태는 아니다.
 대신 아래 두 축이 먼저 잡혀 있다.
 
@@ -295,6 +300,11 @@ void UGDDamageExecCalculation::Execute_Implementation(...)
   `Sweep -> GameplayEvent -> TargetData`
 - 코스트 적용
   `MakeOutgoingGameplayEffectSpec -> SetByCaller -> ApplyGameplayEffectSpecToSelf`
+
+또 프로젝트 세팅의 태그 관리자에서 `Ability.Attack`를 따로 등록하는 화면도 확인된다.
+이 태그가 있어야 `SendGameplayEventToActor()`와 `UGameplayAbility_Attack`가 같은 이름으로 만나게 된다.
+
+![프로젝트 세팅에서 Ability.Attack 태그를 등록한 장면](../assets/images/ability-attack-tag-manager.jpg)
 
 나중에 이 프로젝트에 실제 데미지 계산을 더 붙인다면,
 `UGDGA_FireGun`의 `ExecutionCalculation` 자리에 해당하는 부분을 새로 넣고

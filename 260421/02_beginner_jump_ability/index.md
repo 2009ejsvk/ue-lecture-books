@@ -16,6 +16,12 @@ title: 260421 초급 2편 - Jump Ability로 보는 GAS 생명주기
 
 `점프 입력 -> CanActivateAbility -> ActivateAbility -> CommitAbility -> Character->Jump() -> InputReleased -> CancelAbility -> Character->StopJumping()`
 
+실제 프로젝트 강의 화면에서도 `UGameplayAbility_Base::ActivateAbility(...)`를 먼저 열어 두고,
+Ability가 "진짜 켜지는 지점"을 생명주기의 출발점으로 설명한다.
+`Jump Ability`를 읽을 때도 이 감각으로 보면 `ActivateAbility`와 `CommitAbility`의 역할이 훨씬 빨리 들어온다.
+
+![실전 코드에서 ActivateAbility 오버라이드를 먼저 확인하는 장면](../assets/images/ability-activateability-base.jpg)
+
 ## 생성자에서 하는 일
 
 ```cpp

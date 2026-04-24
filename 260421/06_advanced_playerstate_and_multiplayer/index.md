@@ -221,6 +221,16 @@ void AGDHeroCharacter::OnRep_PlayerState()
 - `AMainPlayerState`
   `PDA_PlayerInfo`, `DT_PlayerInfo`를 읽고 결과 값을 캐릭터의 `UPlayerAttributeSet`에 다시 밀어 넣는다.
 
+강의 화면에서도 `AMainPlayerState`가 `LoadPrimaryAsset(...)`와 `PlayerInfoLoadComplete(...)`를 통해
+플레이어 데이터를 적재하는 허브 역할을 맡는 코드가 먼저 등장한다.
+
+![AMainPlayerState에서 PlayerInfo 비동기 로드를 준비하는 장면](../assets/images/mainplayerstate-load-primary-asset.jpg)
+
+그리고 실제 플레이 로그에는 `PlayerState BeginPlay`, `PlayerCharacter BeginPlay`가 차례로 보인다.
+즉 현재 프로젝트도 전투 실행 본체와 데이터 공급 허브가 분리된 두 축으로 움직인다는 점을 화면에서 바로 확인할 수 있다.
+
+![런타임 로그에서 PlayerState와 PlayerCharacter 시작 순서를 확인하는 장면](../assets/images/runtime-beginplay-log.jpg)
+
 즉 이 프로젝트의 `PlayerState`는 “ASC 본체 보관소”라기보다,
 `플레이어 데이터 적재와 동기화 허브`에 더 가깝다.
 그래서 현재 구조를 한 줄로 요약하면 아래가 된다.

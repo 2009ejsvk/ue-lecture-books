@@ -73,6 +73,11 @@ title: 260410 Wraith 투사체, 데칼, Shinbi 스킬 캐스팅 모션으로 공
 
 그래서 이번 강의는 먼저 캐릭터 메시의 무기 스켈레톤에서 `Muzzle_01` 같은 총구 소켓을 잡고, 거기서 실제 투사체를 스폰하는 흐름을 정리한다.
 
+강의 화면에서도 먼저 무기 메시에서 `Muzzle_01` 소켓 위치를 직접 확인한다.
+즉 이 날짜의 출발점은 "총알 클래스를 만든다"보다 "총알이 나갈 정확한 기준점을 잡는다"에 더 가깝다.
+
+![Wraith 무기에서 Muzzle_01 소켓 위치를 확인하는 장면](./assets/images/wraith-muzzle-socket.png)
+
 ### 1.2 현재 `AWraith::NormalAttack()`은 총알 스폰 책임만 가진다
 
 현재 프로젝트에서 Wraith의 발사는 `AWraith::NormalAttack()`에 들어 있다.
@@ -107,6 +112,11 @@ void AWraith::NormalAttack()
 
 즉 공격 캐릭터가 투사체 내부 구현을 다 알 필요가 없다.
 현재 Wraith는 발사 위치와 기본 파라미터만 넘기고, 이후 물리 이동과 충돌은 총알 액터가 책임지는 구조다.
+
+실제 코드 화면도 `GetSocketLocation(TEXT("Muzzle_01"))`가 발사의 시작점이라는 걸 아주 선명하게 보여 준다.
+문서에서 강조한 "발사 위치 책임 분리"가 어디서 보이는지 바로 확인할 수 있는 장면이다.
+
+![AWraith::NormalAttack에서 총구 소켓 위치를 읽는 장면](./assets/images/wraith-normalattack-getsocketlocation.png)
 
 ### 1.3 `AProjectileBase`는 투사체 공통 골격을 제공한다
 
@@ -230,6 +240,11 @@ void AWraithBullet::BulletHit(
 4. 같은 지점에 사운드를 재생한다.
 5. 같은 지점의 법선 방향을 이용해 데칼을 붙인다.
 
+강의 후반 코드 화면에서도 `BulletHit()` 안에 `TakeDamage`, `SpawnSoundAtLocation`, `SpawnEmitterAtLocation`이 한 블록에 모여 있다.
+즉 피격 후속 처리를 "충돌 지점 중심 파이프라인"으로 묶는다는 설명이 실제 코드와 그대로 겹친다.
+
+![AWraithBullet::BulletHit에서 피격 후속 이펙트를 묶는 장면](./assets/images/wraith-bullethit-impact-effects.png)
+
 즉 `260410`은 단순히 투사체를 만드는 강의가 아니라, "충돌 지점 중심 이펙트"라는 사고방식을 배우는 날이기도 하다.
 피격 위치 `Hit.ImpactPoint`와 표면 방향 `Hit.ImpactNormal`을 같이 쓰기 시작하면, 총알 자국, 마법진, 폭발 흔적 같은 표면형 연출이 전부 같은 패턴으로 확장된다.
 
@@ -273,6 +288,11 @@ void AWraithBullet::BulletHit(
 이번 날짜에서 데칼을 배우는 이유도 명확하다.
 바로 앞 강의의 총알 충돌 흔적과, 바로 뒤 강의에서 쓸 스킬 마법진이 모두 데칼 계열 표현이기 때문이다.
 
+실강도 먼저 에디터 메뉴에서 `Decal Actor`를 직접 배치해 보면서,
+데칼이 파티클과는 다른 별도 액터 계층이라는 점부터 체감하게 만든다.
+
+![에디터에서 Decal Actor를 배치하는 장면](./assets/images/decal-actor-menu.png)
+
 ### 2.2 데칼 액터는 투영 상자를 가진다
 
 에디터에서 `Decal Actor`를 배치해 보면, 데칼은 단순 스프라이트가 아니라 박스 형태의 투영 영역을 갖고 있다는 점을 알 수 있다.
@@ -286,6 +306,11 @@ void AWraithBullet::BulletHit(
 
 자막에서 `Receives Decals` 옵션을 보여 주는 이유도 여기 있다.
 메시 쪽에서 이 옵션을 꺼 두면, 데칼 액터가 그 표면에 아무리 가까이 있어도 결과가 보이지 않는다.
+
+강의 화면에서도 큐브 메시의 `Receives Decals` 옵션을 직접 켜고 끄며,
+"데칼이 안 보이는 문제"가 머티리얼보다 메시 설정일 수도 있다는 점을 짚어 준다.
+
+![메시의 Receives Decals 옵션을 확인하는 장면](./assets/images/decal-receives-decals.png)
 
 ### 2.3 현재 `ADecalBase`는 아주 얇은 래퍼지만 그래서 더 중요하다
 
@@ -342,6 +367,11 @@ UGameplayStatics::SpawnDecalAtLocation(
     (-Hit.ImpactNormal).Rotation(),
     5.f);
 ```
+
+실제 코드 화면도 `SpawnDecalAtLocation()` 한 줄에 위치, 회전, 크기, 수명이 함께 묶여 있다는 점을 그대로 보여 준다.
+즉 데칼은 단순 머티리얼 표시가 아니라, 충돌 결과를 표면 좌표계로 변환하는 연출 단계라는 걸 읽게 된다.
+
+![SpawnDecalAtLocation으로 데칼을 붙이는 장면](./assets/images/decal-spawndecalatlocation.png)
 
 여기서 핵심은 위치만이 아니다.
 `(-Hit.ImpactNormal).Rotation()`으로 표면 법선 반대 방향을 회전값으로 사용한다.
@@ -403,9 +433,19 @@ UGameplayStatics::SpawnDecalAtLocation(
 
 그래서 `Spine_01` 이후 라인만 스킬 모션이 먹게 만들고, 하체는 기존 locomotion을 유지하게 하는 식의 설계가 중요해진다.
 
+강의 초반 애님 그래프 편집 화면도 `Layered Blend Per Bone` 노드를 먼저 추가하는 흐름을 분명하게 보여 준다.
+즉 이 날짜의 스킬 모션은 몽타주를 붙이기 전에, 상하체를 어디서 나눌지부터 정하는 구조다.
+
+![AnimGraph에서 Layered Blend Per Bone 노드를 추가하는 장면](./assets/images/skill-layered-blend-per-bone.png)
+
 ### 3.3 `PlaySkill1()`은 Skill1 몽타주 섹션 재생 진입점이다
 
 현재 `UPlayerAnimInstance`의 `PlaySkill1()`은 스킬 몽타주 재생 진입점 역할을 한다.
+
+실강에서는 먼저 `Input` 폴더에 `IA_Skill1` 액션을 준비해,
+스킬 입력 축을 평타와 분리하는 장면을 보여 준다.
+
+![Input 폴더에 IA_Skill1 액션이 추가된 장면](./assets/images/skill1-input-assets.png)
 
 ```cpp
 void UPlayerAnimInstance::PlaySkill1()
@@ -434,10 +474,20 @@ void UPlayerAnimInstance::ClearSkill1()
 즉 스킬 모션은 이제 "애니메이션 하나 재생"이 아니라, `몽타주 + 섹션 인덱스` 구조로 들어간다.
 이게 바로 이후 `Casting -> Loop -> End` 같은 다단계 스킬 구조로 자연스럽게 확장되는 바닥이다.
 
+코드 화면에서도 `PlaySkill1()` 안에 `Montage_Play()`와 `Montage_JumpToSection()`이 함께 들어 있어,
+스킬1이 단순 재생이 아니라 "지정 섹션 진입" 구조라는 점이 바로 보인다.
+
+![UPlayerAnimInstance::PlaySkill1에서 스킬 몽타주를 재생하는 장면](./assets/images/skill1-playskill1.png)
+
 ### 3.4 애니메이션 끝과 후속 로직 사이에 콜백 구조가 필요하다
 
 현재 코드에는 이 흐름을 보여 주는 힌트가 여러 군데 있다.
 `MontageEndOverride()` 안에는 캐스팅 뒤 루프 모션으로 전환하려는 주석이 남아 있고, 템플릿 애님 인스턴스에는 `AnimNotify_SkillCasting()`이 별도로 존재한다.
+
+또 몽타주 종료 콜백을 분기 처리하는 코드 화면도 남아 있어서,
+평타 몽타주와 스킬 몽타주를 끝난 뒤 서로 다르게 정리하려는 의도가 분명하게 드러난다.
+
+![MontageEndOverride에서 스킬 몽타주 종료 분기를 처리하는 장면](./assets/images/skill1-montage-end-override.png)
 
 ```cpp
 void UPlayerTemplateAnimInstance::AnimNotify_SkillCasting()

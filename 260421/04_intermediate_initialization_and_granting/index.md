@@ -255,6 +255,16 @@ void AGDCharacterBase::AddStartupEffects()
 5. 같은 `BeginPlay()`
    `mASC->GiveAbility(FGameplayAbilitySpec(UGameplayAbility_Attack::StaticClass(), 1, 0))`로 시작 Ability를 준다.
 
+실제 강의 화면에서도 `APlayerCharacter::BeginPlay()`에서 `GetPlayerState<AMainPlayerState>()`를 꺼내
+플레이어 데이터를 먼저 연결하는 흐름을 바로 확인한다.
+
+![BeginPlay에서 MainPlayerState를 참조해 초기 데이터를 붙이는 장면](../assets/images/playercharacter-beginplay-getplayerstate.jpg)
+
+그리고 곧바로 `Ability 세팅` 구간에서 `InitAbilityActorInfo(this, this)` 다음 `GiveAbility(...)`를 호출해
+공격 Ability를 ASC에 등록하는 순서를 잡아 준다.
+
+![APlayerCharacterGAS에서 GiveAbility를 준비하는 장면](../assets/images/asc-giveability.jpg)
+
 즉 `UE20252`의 초반부는 아래처럼 읽는 편이 맞다.
 
 - 시작 스탯

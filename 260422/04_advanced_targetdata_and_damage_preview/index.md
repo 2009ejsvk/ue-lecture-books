@@ -32,6 +32,8 @@ FGameplayAbilityTargetData_SingleTargetHit* HitData =
         TriggerEventData->TargetData.Data[0].Get());
 ```
 
+![`TriggerEventData->TargetData`에서 `SingleTargetHit`를 꺼내는 장면](../assets/images/targetdata-from-trigger-event.jpg)
+
 즉 이 Ability는 타겟을 “다시 찾는” 게 아니라, 이미 전달된 히트 결과를 이어받는다.
 
 이 점이 중요하다.
@@ -111,6 +113,8 @@ UAbilitySystemComponent* TargetASC =
 ```cpp
 // Damage 이펙트 발동.
 ```
+
+![`UGameplayAbility_Attack` 끝부분에 `// Damage 이펙트 발동.` 자리만 남아 있는 장면](../assets/images/damage-effect-placeholder.jpg)
 
 이 주석 한 줄이 곧 다음 강의의 방향을 거의 다 말해 준다.
 이미 필요한 재료는 대부분 준비돼 있다.

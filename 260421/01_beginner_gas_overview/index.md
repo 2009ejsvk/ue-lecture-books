@@ -36,6 +36,11 @@ GAS는 이걸 역할별로 분리해 준다.
 
 ## 가장 먼저 외울 다섯 이름
 
+강의 원본도 먼저 노트 화면에서 `ASC`, `GameplayAbility`, `AttributeSet`, `GameplayEffect`를 한 번에 훑고 시작한다.
+이 편은 그 장면을 글로 천천히 풀어 쓴 버전이라고 생각하면 된다.
+
+![강의 초반 메모에서 GAS 핵심 구성요소를 정리하는 장면](../assets/images/gas-components-note.jpg)
+
 ### 1. `ASC`
 
 `AbilitySystemComponent`다.

@@ -124,6 +124,8 @@ Caller.DataTag = FGameplayTag::RequestGameplayTag(TEXT("Effect.Mana"));
 Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(Caller);
 ```
 
+![`RequestGameplayTag(TEXT("Effect.Mana"))`로 비용 슬롯 이름을 지정하는 장면](../assets/images/effect-mana-request-gameplay-tag.jpg)
+
 만약 모든 스킬의 마나 비용이 항상 같다면, 그냥 고정 숫자를 넣어도 된다.
 하지만 실제 게임에서는 스킬마다 마나 비용이 다르다.
 

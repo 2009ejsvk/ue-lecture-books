@@ -94,6 +94,10 @@ void AMainPlayerController::BeginPlay()
 }
 ```
 
+![`AMainPlayerController` 생성자에서 마우스 커서를 활성화하는 장면](./assets/images/mainplayercontroller-show-mouse-cursor.png)
+
+![`BeginPlay()`에서 `FInputModeGameAndUI`를 준비하는 장면](./assets/images/mainplayercontroller-input-mode-game-and-ui.png)
+
 이 두 설정이 의미하는 바는 분명하다.
 
 - `bShowMouseCursor = true`: 플레이어가 실제로 목표 지점을 찍을 수 있게 한다.
@@ -118,6 +122,10 @@ void AMainPlayerController::Tick(float DeltaTime)
         Hit);
 }
 ```
+
+![`Tick()`에서 `GetHitResultUnderCursor()` 호출을 배치한 장면](./assets/images/mainplayercontroller-get-hit-result-under-cursor.png)
+
+![`Hit.ImpactPoint`를 디버그 출력으로 확인하는 장면](./assets/images/mainplayercontroller-impact-point-debug.png)
 
 이 함수는 "커서 아래 픽셀"을 직접 돌려주는 것이 아니라, 그 방향으로 레이를 쏴서 맞은 월드 표면 정보를 `HitResult`로 돌려준다.
 그래서 우리가 진짜로 쓰게 되는 값은 다음과 같다.
@@ -201,6 +209,12 @@ void AShinbi::Skill1Casting()
     mMagicCircleActor = DecalActor;
 }
 ```
+
+![`AShinbi::Skill1Casting()` 엔트리를 추가하는 장면](./assets/images/shinbi-skill1casting-entry.png)
+
+![Shinbi 전용 `MTShibiMagicCircle` 머티리얼을 에디터에서 확인하는 장면](./assets/images/shinbi-magic-circle-material.jpg)
+
+![커서 위치에 `ADecalBase` 마법진 액터를 스폰하는 장면](./assets/images/shinbi-spawn-magic-circle-actor.png)
 
 이 함수는 매우 많은 것을 동시에 보여 준다.
 
@@ -292,6 +306,8 @@ void AShinbi::InputAttack()
 
 즉 마법진 액터는 단순 시각 효과가 아니라, "지금 Shinbi가 스킬 타깃 지정 상태인가"를 나타내는 상태 플래그 역할도 한다.
 
+![몽타주 타임라인에서 `SkillCasting` 노티파이 시점을 확인하는 장면](./assets/images/shinbi-skillcasting-notify-timeline.png)
+
 ### 2.5 현재 강의는 의도적으로 캔슬 규칙을 단순화한다
 
 자막에서도 반복해서 말하듯, 평타 캔슬과 스킬 캔슬 규칙은 아직 세밀하게 정리되지 않았다.
@@ -337,6 +353,8 @@ Fracture 모드에서 하는 일은 요약하면 다음과 같다.
 즉 이 과정은 런타임 C++보다 앞선 준비 작업이다.
 게임 코드가 아무리 잘 돼 있어도, 부서질 에셋이 제대로 만들어져 있지 않으면 원하는 파괴 표현은 나오지 않는다.
 
+![에디터에서 Geometry Collection 자산과 디테일 패널을 함께 확인하는 장면](./assets/images/geometry-collection-asset-details.jpg)
+
 ### 3.3 `Damage Threshold`와 `Collision Damage`는 파괴 감각을 좌우한다
 
 자막에서 강조하는 중요한 포인트는 `Damage Threshold`다.
@@ -364,6 +382,8 @@ Fracture 모드에서 하는 일은 요약하면 다음과 같다.
 - 도착 지점에서 파괴 반응이 일어난다.
 
 Geometry Collection은 바로 이 마지막 한 단계를 담당한다.
+
+![Shinbi 스킬 충돌 뒤 런타임에서 파괴 결과가 보이는 장면](./assets/images/geometry-collection-runtime-destruction.jpg)
 
 ### 3.5 장 정리
 
@@ -464,6 +484,8 @@ void AGeometryActor::SetGeometryAsset(const FString& Path)
 }
 ```
 
+![`SetGeometryAsset()`에서 `UGeometryCollection`을 로드해 연결하는 장면](./assets/images/geometryactor-set-geometry-asset-code.jpg)
+
 여기서 중요한 점은 스태틱 메시 컴포넌트처럼 `SetStaticMesh()`를 쓰는 것이 아니라, `UGeometryCollection` 자산을 `SetRestCollection()`으로 넘긴다는 것이다.
 즉 이 액터의 본질은 "깨질 수 있는 컬렉션"을 들고 있다는 데 있다.
 
@@ -514,6 +536,8 @@ void AGeometryActor::GeometryHit(
 4. 반경, 레벨 깊이, 전파 비율, 힘 크기 같은 파라미터로 파괴 감각을 조절할 수 있다.
 
 즉 Geometry Collection의 런타임 파괴는 결국 "어느 조각에, 어느 위치에서, 얼마나 큰 힘을 넣을 것인가"의 문제다.
+
+![블루프린트에서 `ApplyExternalStrain` 노드를 연결해 파괴를 여는 장면](./assets/images/geometryactor-apply-external-strain-blueprint.jpg)
 
 ### 4.5 현재 Shinbi 스킬과 `AGeometryActor`는 꽤 자연스럽게 연결된다
 

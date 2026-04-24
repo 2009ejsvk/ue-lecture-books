@@ -36,6 +36,11 @@ title: 260421 GASDocumentation으로 배우는 GAS 분권형 교재
 - `Saved\AcademyUtility` 덤프
   코드 원본을 직접 뒤지지 않아도 `260421` 각 편에서 필요한 대응 지점을 빠르게 확인할 수 있다.
 
+강의 화면 기준으로도 `260421`은 개념 설명에서 끝나지 않고, 바로 `Player` 폴더의 `PDA_PlayerInfo`, `DT_PlayerInfo`, 플레이 테스트 화면까지 이어진다.
+그래서 이 날짜 문서는 `개념 -> 데이터 -> 코드 -> 런타임` 순서로 읽는다고 생각하면 훨씬 덜 추상적으로 느껴진다.
+
+![260421 강의에서 Player 폴더와 런타임 화면을 함께 확인하는 장면](./assets/images/overview-editor-player-assets.jpg)
+
 ## 이 교재를 읽는 가장 좋은 순서
 
 처음 GAS를 배울 때는 멀티플레이 구조보다 `Ability 한 개가 어떻게 실행되는지`를 먼저 잡는 편이 훨씬 쉽다.

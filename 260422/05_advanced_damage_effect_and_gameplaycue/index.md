@@ -248,6 +248,8 @@ bool UGameplayCueNotify_StaticBase::OnExecute_Implementation(
 이 구조는 코드만으로 끝나지 않는다.
 태그와 Cue 탐색 경로도 같이 맞아야 한다.
 
+![프로젝트 세팅의 Gameplay Tag Manager에서 태그 트리를 확인하는 장면](../assets/images/project-settings-gameplay-tags-manager.jpg)
+
 `DefaultGameplayTags.ini`에는 실제로 아래 태그들이 등록돼 있다.
 
 ```ini

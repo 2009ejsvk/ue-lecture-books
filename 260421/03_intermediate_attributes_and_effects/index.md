@@ -217,6 +217,12 @@ if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 
 `UE_Academy_Stduy` 덤프 기준으로 보면, 현재 프로젝트의 `AttributeSet` 축은 아래처럼 잡혀 있다.
 
+강의 화면에서도 `DT_PlayerInfo`가 `Attack`, `Defense`, `HPMax`, `MPMax`, `WalkSpeed`, `RunSpeed`, `AttackDistance`를 한 표에 모아 두고 있다.
+그래서 현재 branch가 `GameplayEffect`만 먼저 읽는 구조가 아니라,
+`데이터 테이블 원본 -> PlayerState -> AttributeSet` 순서로 스탯을 밀어 넣는 프로젝트라는 점이 더 선명하게 보인다.
+
+![플레이어 기본 스탯이 DT_PlayerInfo 데이터 테이블에 정리된 장면](../assets/images/playerinfo-data-table.jpg)
+
 - `UBaseAttributeSet`
   `Attack`, `Defense`, `HP`, `HPMax`, `MP`, `MPMax`, `WalkSpeed`, `RunSpeed`, `AttackDistance`, `Gold`
 - `UPlayerAttributeSet`

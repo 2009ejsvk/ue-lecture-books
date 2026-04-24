@@ -125,6 +125,8 @@ UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 const UBaseAttributeSet* SourceAttr = SourceASC->GetSet<UBaseAttributeSet>();
 ```
 
+![`ActivateAbility()`에서 `GetAvatarActorFromActorInfo()`로 SourceActor를 얻는 장면](../assets/images/sourceactor-from-actorinfo.jpg)
+
 각 줄의 의미는 아래와 같다.
 
 - `GetAvatarActorFromActorInfo()`
@@ -148,6 +150,8 @@ virtual UAbilitySystemComponent* GetAbilitySystemComponent() const
 }
 ```
 
+![`APlayerCharacterGAS`가 `IAbilitySystemInterface`를 구현하는 장면](../assets/images/playercharactergas-abilitysystem-interface.jpg)
+
 즉 캐릭터는 단순한 비주얼 액터가 아니라, “내 ASC는 여기 있다”라고 엔진과 GAS에 알려 주는 인터페이스 구현체다.
 
 그래서 `ActorInfo`와 `BlueprintLibrary`가 이 액터에서 ASC를 찾아갈 수 있다.
@@ -162,6 +166,8 @@ virtual UAbilitySystemComponent* GetAbilitySystemComponent() const
 // 읽기 전용(const)로 반환되는 값을 일반 포인터로 받으려 해서 에러가 난다.
 UBaseAttributeSet* SourceAttr = SourceASC->GetSet<UBaseAttributeSet>();
 ```
+
+![`GetSet()` 반환값을 일반 포인터로 받으려다 const 에러가 나는 장면](../assets/images/sourceattr-const-getset-error.jpg)
 
 반면 아래처럼 읽기 전용으로 받으면 문제없다.
 

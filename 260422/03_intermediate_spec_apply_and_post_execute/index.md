@@ -68,6 +68,8 @@ FGameplayEffectSpecHandle ManaSpec = MakeOutgoingGameplayEffectSpec(
     UGameplayEffect_ManaCost::StaticClass(), GetAbilityLevel());
 ```
 
+![`MakeOutgoingGameplayEffectSpec()`로 실행용 `ManaSpec`을 만드는 장면](../assets/images/mana-spec-make-outgoing.jpg)
+
 여기서
 
 - `UGameplayEffect_ManaCost`
@@ -135,6 +137,8 @@ Effect 쪽 연산은 `Additive`였다.
 SourceASC->ApplyGameplayEffectSpecToSelf(*ManaSpec.Data);
 ```
 
+![`ApplyGameplayEffectSpecToSelf()`로 마나 비용을 자기 자신에게 적용하는 장면](../assets/images/apply-gameplay-effect-spec-to-self.jpg)
+
 이 줄은 아래 의미다.
 
 - `SourceASC`
@@ -189,6 +193,8 @@ void UBaseAttributeSet::PostGameplayEffectExecute(
     }
 }
 ```
+
+![`PostGameplayEffectExecute()` 훅을 열어 MP/HP 후처리 지점을 확인하는 장면](../assets/images/postgameplayeffectexecute-hook.jpg)
 
 현재 구현은 비어 있지만, 의미는 매우 명확하다.
 
