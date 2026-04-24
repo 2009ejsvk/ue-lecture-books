@@ -86,6 +86,11 @@ UAbilitySystemComponent* TargetASC =
 즉 데미지 이펙트를 적용할 땐 결국 `TargetASC`가 필요하다.
 그래서 `TargetActor`만 찾고 끝나는 게 아니라, GAS 적용 지점까지 이어서 찾아가야 한다.
 
+실제 강의 화면에서도 `HitResult`에서 액터를 꺼내고, 바로 그 액터의 ASC까지 이어서 찾는 코드가 한 화면에 보인다.
+이 장면이 바로 "피격 대상을 찾는 단계"와 "그 대상의 GAS 본체를 찾는 단계"를 분리해서 읽어야 하는 이유다.
+
+![HitData에서 TargetActor와 TargetASC를 이어서 찾는 장면](../assets/images/targetasc-from-hitdata.jpg)
+
 ## 왜 `UAbilitySystemBlueprintLibrary`를 쓰나
 
 이 프로젝트는 `TargetActor`가 반드시 같은 타입 캐릭터라고 보장하지 않는다.

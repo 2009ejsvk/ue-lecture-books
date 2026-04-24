@@ -33,6 +33,10 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
   - [03. Spec 적용과 PostGameplayEffectExecute](./260422/03_intermediate_spec_apply_and_post_execute/)
   - [04. TargetData와 다음 데미지 이펙트 예고](./260422/04_advanced_targetdata_and_damage_preview/)
   - [05. Damage GameplayEffect와 GameplayCue로 실제 피해를 적용하는 흐름](./260422/05_advanced_damage_effect_and_gameplaycue/)
+- [260423. UE20252 실전 프로젝트에서 GAS 공격 완성, GameplayCue 적용, MonsterGAS 전투 연결까지 이어지는 보충 교재](./260423/)
+  - [01. GAS 공격 파이프라인 완성](./260423/01_intermediate_gas_attack_completion/)
+  - [02. GameplayCue 적용과 타격 연출 분리](./260423/02_intermediate_gameplaycue_application/)
+  - [03. MonsterGAS에 공격 파이프라인 적용](./260423/03_advanced_monster_attack_gas_application/)
 - [260424. AcademyUtility 플러그인으로 블루프린트, C++ 클래스, GameplayTags, 레벨 배치를 덤프해 교재 보강 재료를 모으는 부록](./260424/)
 
 ## 최근 개정 포인트
@@ -42,6 +46,7 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - `260416`: 기존 `NormalAttack -> TakeDamage` 루프와 현재 `Ability.Attack -> GameplayEffect_Damage -> GameplayCue.Battle.Attack` 루프를 비교 보강했고, `Gunner`는 아직 GAS 이관이 덜 된 점도 메모했다.
 - `260420`: 사망 후반 파이프라인이 현재 `MonsterGAS::Death()`와 `EndPlay()`에서도 거의 그대로 재사용된다는 점과, `TakeDamage()` 진입점은 아직 완전히 GAS화되지 않은 점을 반영했다.
 - `260422`: `Damage GameplayEffect`와 `GameplayCue`까지 이어지는 5편을 추가해 실전 GAS 흐름이 `ApplyGameplayEffectSpecToTarget`까지 닫히도록 확장했다.
+- `260423`: `GAS 공격 완성`, `GameplayCue 적용`, `MonsterGAS 공격 연결` 3편을 새로 추가해 플레이어 공격 GAS가 연출과 몬스터 AI 전투까지 이어지는 구조를 정리했다.
 - `260424`: `AcademyUtility` 부록을 새로 추가해 `Dump.Path`, `Dump.GameplayTags`, `Dump.Level`, `Generate.*`와 `Saved/AcademyUtility` 읽는 순서를 한곳에 정리했다.
 
 ## 초보자용 찾아보기
@@ -62,6 +67,7 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - `260420`: 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템을 떨어뜨리고 플레이어가 주워 가는 마무리 루프를 만들고, 그 후반 파이프라인이 현재 `MonsterGAS`에도 어떻게 이어지는지 추적하고 싶을 때
 - `260421`: GAS를 처음 배울 때 `초급 -> 중급 -> 고급` 순서로 쪼개진 분권형 교재와 Epic 공식 문서 연결을 같이 보고 싶을 때
 - `260422`: GAS 개념을 배운 뒤, 실제 `UE20252` 프로젝트에서 `GameplayEffect`, `SetByCaller`, `ApplyGameplayEffectSpecToSelf`, `ApplyGameplayEffectSpecToTarget`, `GameplayCue`가 어디에 들어가는지 실전 코드로 보고 싶을 때
+- `260423`: `GameplayAbility_Attack`이 실제로 어떻게 완성되는지, `GameplayCue.Battle.Attack`이 연출을 어떻게 분리하는지, 그리고 그 공격 루프가 `MonsterGAS`와 `BTTask_AttackGAS`까지 어떻게 이어지는지 같이 보고 싶을 때
 - `260424`: 강의 내용을 보강하려고 `Saved/AcademyUtility` 덤프를 다시 뽑거나 읽어야 할 때, 어떤 명령을 쓰고 어떤 출력 파일을 먼저 봐야 하는지 빠르게 정리하고 싶을 때
 
 ## 원칙
@@ -90,8 +96,10 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - `260420/index.md`: 2026-04-20 교재
 - `260421/index.md`: 2026-04-21 GASDocumentation 기반 GAS 입문 교재
 - `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 및 Damage/Cue 보충 교재
+- `260423/index.md`: 2026-04-23 UE20252 실전 GAS 공격 완성, GameplayCue, MonsterGAS 연결 보충 교재
 - `260424/index.md`: 2026-04-24 AcademyUtility 덤프 워크플로 부록
 - `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260410/assets/images`, `260413/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처
 - `260421/assets/images`: GAS 입문 교재용 이미지 자리
 - `260422/assets/images`: UE20252 실전 GameplayEffect 교재용 이미지 자리
+- `260423/assets/images`: UE20252 실전 GAS 공격 완성, GameplayCue, MonsterGAS 교재용 이미지 자리
 - `260424/assets/images`: AcademyUtility 부록용 이미지 자리

@@ -106,6 +106,11 @@ ManaSpec.Data->SetSetByCallerMagnitude(
 즉 이전 문서의 Effect는 “Effect.Mana라는 입력칸이 있다”고만 정해 두었고,
 이 코드가 그 칸에 실제 숫자를 넣는 순간이다.
 
+강의 화면에서도 이 부분이 핵심 장면으로 잡힌다.
+`ManaSpec.Data`에 `Effect.Mana`와 `-mMana`를 넣는 순간, 앞 편에서 만든 규칙 객체가 이번 시전용 데이터로 구체화된다.
+
+![ManaSpec에 Effect.Mana와 음수 비용을 주입하는 장면](../assets/images/manacost-setbycaller-runtime.jpg)
+
 ## 왜 `-mMana`인가
 
 Effect 쪽 연산은 `Additive`였다.

@@ -26,6 +26,10 @@ title: 260422 중급 1편 - ManaCost GameplayEffect와 SetByCaller
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_ManaCost.cpp`
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\BaseAttributeSet.h`
 
+강의 화면에서는 먼저 새 C++ 클래스 추가 창에서 `GameplayEffect` 계열 부모를 검색해, 마나 비용 규칙을 별도 클래스로 분리할 준비를 한다.
+
+![GameplayEffect 계열 부모 클래스를 검색하는 장면](../assets/images/gameplayeffect-class-search.jpg)
+
 ## 왜 마나 소모를 `GameplayEffect`로 분리하나
 
 이 강의의 중심 메시지는 단순하다.
@@ -40,6 +44,10 @@ title: 260422 중급 1편 - ManaCost GameplayEffect와 SetByCaller
 - `PostGameplayEffectExecute()` 같은 후처리 지점과도 자연스럽게 연결된다
 
 즉 `GameplayEffect_ManaCost`는 단순 마나 감소 클래스가 아니라, “비용 규칙을 별도 객체로 분리한다”는 선언이다.
+
+그리고 생성 직후 헤더에서 `UGameplayEffect_ManaCost` 틀을 먼저 세워 둔 다음, 생성자에서 `DurationPolicy`, `Modifier`, `SetByCaller`를 채워 넣는 흐름으로 강의가 이어진다.
+
+![UGameplayEffect_ManaCost 헤더 틀을 만드는 장면](../assets/images/manacost-effect-header.jpg)
 
 ## `DurationPolicy = Instant`는 왜 중요하나
 
