@@ -37,11 +37,23 @@ title: UE Lecture Books
   - [02. ManaCost GameplayEffect와 SetByCaller](./260422/02_intermediate_manacost_effect_and_setbycaller/)
   - [03. Spec 적용과 PostGameplayEffectExecute](./260422/03_intermediate_spec_apply_and_post_execute/)
   - [04. TargetData와 다음 데미지 이펙트 예고](./260422/04_advanced_targetdata_and_damage_preview/)
+  - [05. Damage GameplayEffect와 GameplayCue로 실제 피해를 적용하는 흐름](./260422/05_advanced_damage_effect_and_gameplaycue/)
+- [260424. AcademyUtility 플러그인으로 블루프린트, C++ 클래스, GameplayTags, 레벨 배치를 덤프해 교재 보강 재료를 모으는 부록](./260424/)
+
+## 최근 개정 포인트
+
+- `260414`: `MonsterBase -> MonsterController -> DataTable` 원형 설명에 현재 `MonsterGAS -> MonsterGASController -> AttributeSet` 비교 메모를 붙였다.
+- `260415`: `MonsterSpawnPoint`, `PatrolPath`, `Perception` 설명을 `MonsterGAS`, `BT_MonsterGAS_Normal`, `BTTask_PatrolGAS`, `BTTask_TraceGAS` 기준으로 다시 맞췄다.
+- `260416`: `AnimNotify`, `BTTask_MonsterAttack` 전투 루프에 더해, 현재 `Ability.Attack -> GameplayEffect_Damage -> GameplayCue` 파이프라인과 `Gunner` 미이관 상태를 같이 정리했다.
+- `260420`: `Death()`, `EndPlay()`, `ItemBox` 후반 파이프라인이 현재 `MonsterGAS`에서도 어디까지 이어지는지 추적 메모를 추가했다.
+- `260422`: 실전 GAS 보충 교재에 5편을 추가해 `Damage GameplayEffect`와 `GameplayCue`까지 전체 흐름을 닫았다.
+- `260424`: `AcademyUtility` 명령 선택 가이드, 산출물 분류, 추가 덤프 추천 경로를 담은 부록을 새로 추가했다.
 
 ## 읽는 방식
 
 - 각 교재는 `강의 흐름 -> 장별 해설 -> 코드 발췌 -> 도판 -> 복습` 순서로 정리되어 있습니다.
 - 설명은 `D:\UE_Academy_Stduy_compressed`의 강의 영상, 자막, 캡처와 `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252`의 실제 소스를 함께 대조해 작성했습니다.
+- 최근 보강된 날짜들은 `D:\UnrealProjects\UE_Academy_Stduy\Saved\AcademyUtility` 덤프도 함께 대조해, 강의 원형과 최신 branch 차이를 같이 읽을 수 있게 정리했습니다.
 - 이후 날짜가 추가되면 같은 형식으로 Markdown 교재를 계속 늘려 갈 수 있습니다.
 
 ## 현재 포함된 주제
@@ -55,13 +67,14 @@ title: UE Lecture Books
 - `260409`: `PlayerTemplateAnimInstance`, 충돌 채널과 프로파일, `Sweep`, `TakeDamage`, 파티클, 사운드, 투사체를 묶어 실제 공격 판정과 피격 반응이 있는 플레이어 전투 파이프라인을 만드는 문서
 - `260410`: `Wraith`, `Muzzle_01`, `ProjectileMovement`, `WraithBullet`, `Decal`, `Layered Blend Per Bone`, `Skill1 Montage`를 이용해 총알 자국과 스킬 캐스팅 모션까지 포함한 공격 표현 구조를 확장하는 문서
 - `260413`: `MainPlayerController`, `GetHitResultUnderCursor`, `ADecalBase`, `Shinbi::Skill1Casting`, `Geometry Collection`, `ApplyExternalStrain`, `GeometryActor`를 이용해 마우스 지정형 스킬과 파괴 연출을 연결하는 문서
-- `260414`: `MonsterBase`, `AIController`, `AIPerception`, `Behavior Tree`, `Blackboard`, `MonsterState`, `DataTable`, `AssetManager`를 이용해 몬스터 AI의 본체, 감지, 판단, 데이터 관리 기반을 세우는 문서
-- `260415`: `SpawnPoint`, `PatrolPath`, `Behavior Tree` 등록, `Perception`, `Move To`를 이용해 몬스터가 월드에 생성되고 순찰하다가 플레이어를 보면 추적하도록 만드는 문서
-- `260416`: `MonsterAnimInstance`, `MonsterTrace Task`, `MonsterAttack Task`, `AnimNotify` 기반 전투 루프를 이용해 추적에서 공격으로 넘어가고 타격 시점을 맞추는 몬스터 전투 문서
+- `260414`: `MonsterBase`, `AIController`, `AIPerception`, `Behavior Tree`, `Blackboard`, `MonsterState`, `DataTable`, `AssetManager`를 이용해 몬스터 AI의 본체, 감지, 판단, 데이터 관리 기반을 세우고, 같은 구조가 현재 `MonsterGAS`, `MonsterGASController`, `UMonsterAttributeSet` 쪽에서 어떻게 이어지는지도 비교하는 문서
+- `260415`: `MonsterSpawnPoint`, `PatrolPath`, `MonsterGAS`, `MonsterGASController`, `BT_MonsterGAS_Normal`, `BTTask_PatrolGAS`, `BTTask_TraceGAS`를 이용해 몬스터가 월드에 생성되고 순찰하다가 플레이어를 보면 추적하도록 만드는 문서
+- `260416`: `MonsterAnimInstance`, `MonsterGASAnimInstance`, `BTTask_MonsterTrace`, `BTTask_AttackGAS`, `AnimNotify` 기반 전투 루프를 이용해 추적에서 공격으로 넘어가고, 기존 `TakeDamage` 직통 루프와 현재 GAS 공격 루프 차이까지 맞춰 보는 몬스터 전투 문서
 - `260417`: `Monster Wait Task`, `Monster Patrol Task`, 엔진/에디터 버그 수정 사례를 통해 몬스터가 비전투 상태에서 대기하고 순찰하는 루프를 만들고, 순찰이 꼬일 때 어떻게 디버깅하는지 다루는 문서
-- `260420`: `Monster Death`, `AnimNotify_Death`, `Ragdoll`, `Physics Asset`, `ItemBox`, `Drop Animation`, `Overlap Pickup`을 묶어 몬스터 사망 이후 쓰러짐, 드롭, 획득까지 마무리하는 문서
+- `260420`: `Monster Death`, `AnimNotify_Death`, `Ragdoll`, `Physics Asset`, `ItemBox`, `Drop Animation`, `Overlap Pickup`을 묶어 몬스터 사망 이후 쓰러짐, 드롭, 획득까지 마무리하고, 그 후반 파이프라인이 현재 `MonsterGAS::Death()`와 `EndPlay()`에도 어떻게 이어지는지 추적하는 문서
 - `260421`: `GASDocumentation` 예제 프로젝트를 기준으로 `ASC`, `AttributeSet`, `GameplayAbility`, `GameplayEffect`, `GameplayTag`를 처음부터 다시 정리하고, 이를 `초급`, `중급`, `고급`, `부록`으로 나눠 `GDGA_CharacterJump`, `GDGA_FireGun`, `GDAttributeSetBase`, `GDDamageExecCalculation`, `GDPlayerState`까지 단계적으로 읽는 문서. Epic 공식 문서 연결과 별도 공식 문서 참고 가이드도 포함한다.
-- `260422`: `UE20252` 실제 프로젝트 코드로 돌아와 `ShinbiGAS`, `GameplayAbility_Attack`, `GameplayAbility_Base`, `GameplayEffect_ManaCost`, `BaseAttributeSet`을 중심으로 `GameplayEvent -> ManaCost GameplayEffect -> SetByCaller -> ApplyGameplayEffectSpecToSelf -> PostGameplayEffectExecute` 흐름을 체감하는 보충 문서
+- `260422`: `UE20252` 실제 프로젝트 코드로 돌아와 `ShinbiGAS`, `GameplayAbility_Attack`, `GameplayAbility_Base`, `GameplayEffect_ManaCost`, `GameplayEffect_Damage`, `GameplayCueNotify_StaticBase`, `BaseAttributeSet`을 중심으로 `GameplayEvent -> ManaCost GameplayEffect -> SetByCaller -> ApplyGameplayEffectSpecToSelf -> ApplyGameplayEffectSpecToTarget -> PostGameplayEffectExecute -> GameplayCue` 흐름을 체감하는 보충 문서
+- `260424`: `AcademyUtilityPlugin`의 `Academy.Dump.Selected`, `Academy.Dump.Path`, `Academy.Dump.GameplayTags`, `Academy.Dump.Level`, `Academy.Generate.*`를 기준으로 실제 문서 보강용 덤프 워크플로를 정리하고, 어떤 산출물을 어떤 순서로 읽어야 하는지 설명하는 부록 문서
 
 ## 저장소 구조
 
@@ -81,7 +94,9 @@ title: UE Lecture Books
 - `260417/index.md`: 2026-04-17 강의 교재
 - `260420/index.md`: 2026-04-20 강의 교재
 - `260421/index.md`: 2026-04-21 GASDocumentation 기반 GAS 입문 교재
-- `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 보충 교재
+- `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 및 Damage/Cue 보충 교재
+- `260424/index.md`: 2026-04-24 AcademyUtility 덤프 워크플로 부록
 - `260421/assets/images`: GAS 입문 교재용 이미지 자리
 - `260422/assets/images`: UE20252 실전 GameplayEffect 교재용 이미지 자리
+- `260424/assets/images`: AcademyUtility 부록용 이미지 자리
 - `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260410/assets/images`, `260413/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처

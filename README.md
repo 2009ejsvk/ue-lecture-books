@@ -32,6 +32,17 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
   - [02. ManaCost GameplayEffect와 SetByCaller](./260422/02_intermediate_manacost_effect_and_setbycaller/)
   - [03. Spec 적용과 PostGameplayEffectExecute](./260422/03_intermediate_spec_apply_and_post_execute/)
   - [04. TargetData와 다음 데미지 이펙트 예고](./260422/04_advanced_targetdata_and_damage_preview/)
+  - [05. Damage GameplayEffect와 GameplayCue로 실제 피해를 적용하는 흐름](./260422/05_advanced_damage_effect_and_gameplaycue/)
+- [260424. AcademyUtility 플러그인으로 블루프린트, C++ 클래스, GameplayTags, 레벨 배치를 덤프해 교재 보강 재료를 모으는 부록](./260424/)
+
+## 최근 개정 포인트
+
+- `260414`: 기존 `MonsterState` 축 설명에 현재 `MonsterGAS`, `MonsterGASController`, `AttributeSet` 비교 메모를 붙여, AI 기반 구조가 최신 branch에서 어떻게 이어지는지 같이 읽을 수 있게 했다.
+- `260415`: 스폰과 순찰 설명을 `MonsterBase` 원형만이 아니라 `MonsterGAS`, `MonsterGASController`, `BT_MonsterGAS_Normal`, `BTTask_PatrolGAS`, `BTTask_TraceGAS` 기준으로 다시 정리했다.
+- `260416`: 기존 `NormalAttack -> TakeDamage` 루프와 현재 `Ability.Attack -> GameplayEffect_Damage -> GameplayCue.Battle.Attack` 루프를 비교 보강했고, `Gunner`는 아직 GAS 이관이 덜 된 점도 메모했다.
+- `260420`: 사망 후반 파이프라인이 현재 `MonsterGAS::Death()`와 `EndPlay()`에서도 거의 그대로 재사용된다는 점과, `TakeDamage()` 진입점은 아직 완전히 GAS화되지 않은 점을 반영했다.
+- `260422`: `Damage GameplayEffect`와 `GameplayCue`까지 이어지는 5편을 추가해 실전 GAS 흐름이 `ApplyGameplayEffectSpecToTarget`까지 닫히도록 확장했다.
+- `260424`: `AcademyUtility` 부록을 새로 추가해 `Dump.Path`, `Dump.GameplayTags`, `Dump.Level`, `Generate.*`와 `Saved/AcademyUtility` 읽는 순서를 한곳에 정리했다.
 
 ## 초보자용 찾아보기
 
@@ -44,13 +55,14 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - `260409`: 실제 공격 판정, 데미지, 이펙트, 사운드, 투사체까지 붙여 전투를 완성하고 싶을 때
 - `260410`: Wraith 총알 발사 위치, 데칼 자국, Shinbi 스킬 캐스팅 모션처럼 공격 표현을 한 단계 더 풍부하게 만들고 싶을 때
 - `260413`: 마우스로 월드 지점을 찍고, 마법진을 띄우고, 그 위치에 파괴 연출까지 연결되는 지정형 스킬을 만들고 싶을 때
-- `260414`: 몬스터 AI를 만들기 전에 감지, 판단, 데이터 관리까지 포함한 기반 구조를 잡고 싶을 때
-- `260415`: 몬스터를 맵에 배치하고 순찰시키고 플레이어를 보면 추적하게 만들고 싶을 때
-- `260416`: 몬스터가 추적에서 공격으로 넘어가고 노티파이 타이밍에 맞춰 때리게 만들고 싶을 때
+- `260414`: 몬스터 AI를 만들기 전에 감지, 판단, 데이터 관리까지 포함한 기반 구조를 잡고, 그 구조가 현재 branch에서 `ASC + AttributeSet`으로 어떻게 옮겨 갔는지도 같이 보고 싶을 때
+- `260415`: 몬스터를 맵에 배치하고 순찰시키고 플레이어를 보면 추적하게 만들되, 현재 `MonsterGAS`와 `BT_MonsterGAS_Normal` 기준 배치도 같이 보고 싶을 때
+- `260416`: 몬스터가 추적에서 공격으로 넘어가고 노티파이 타이밍에 맞춰 때리게 만들면서, legacy 직통 데미지와 GAS 데미지 루프 차이도 같이 보고 싶을 때
 - `260417`: 몬스터가 전투 중이 아닐 때 대기하고 순찰하는 루프를 만들고, 순찰이 꼬일 때 원인을 찾고 싶을 때
-- `260420`: 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템을 떨어뜨리고 플레이어가 주워 가는 마무리 루프를 만들고 싶을 때
+- `260420`: 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템을 떨어뜨리고 플레이어가 주워 가는 마무리 루프를 만들고, 그 후반 파이프라인이 현재 `MonsterGAS`에도 어떻게 이어지는지 추적하고 싶을 때
 - `260421`: GAS를 처음 배울 때 `초급 -> 중급 -> 고급` 순서로 쪼개진 분권형 교재와 Epic 공식 문서 연결을 같이 보고 싶을 때
-- `260422`: GAS 개념을 배운 뒤, 실제 `UE20252` 프로젝트에서 `GameplayEffect`, `SetByCaller`, `ApplyGameplayEffectSpecToSelf`가 어디에 들어가는지 실전 코드로 보고 싶을 때
+- `260422`: GAS 개념을 배운 뒤, 실제 `UE20252` 프로젝트에서 `GameplayEffect`, `SetByCaller`, `ApplyGameplayEffectSpecToSelf`, `ApplyGameplayEffectSpecToTarget`, `GameplayCue`가 어디에 들어가는지 실전 코드로 보고 싶을 때
+- `260424`: 강의 내용을 보강하려고 `Saved/AcademyUtility` 덤프를 다시 뽑거나 읽어야 할 때, 어떤 명령을 쓰고 어떤 출력 파일을 먼저 봐야 하는지 빠르게 정리하고 싶을 때
 
 ## 원칙
 
@@ -77,7 +89,9 @@ Markdown 기반 언리얼 강의 교재 저장소입니다.
 - `260417/index.md`: 2026-04-17 교재
 - `260420/index.md`: 2026-04-20 교재
 - `260421/index.md`: 2026-04-21 GASDocumentation 기반 GAS 입문 교재
-- `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 보충 교재
+- `260422/index.md`: 2026-04-22 UE20252 실전 GameplayEffect 및 Damage/Cue 보충 교재
+- `260424/index.md`: 2026-04-24 AcademyUtility 덤프 워크플로 부록
 - `260401/assets/images`, `260402/assets/images`, `260403/assets/images`, `260406/assets/images`, `260407/assets/images`, `260408/assets/images`, `260409/assets/images`, `260410/assets/images`, `260413/assets/images`, `260414/assets/images`, `260415/assets/images`, `260416/assets/images`, `260417/assets/images`, `260420/assets/images`: 원본 영상에서 다시 추출한 캡처
 - `260421/assets/images`: GAS 입문 교재용 이미지 자리
 - `260422/assets/images`: UE20252 실전 GameplayEffect 교재용 이미지 자리
+- `260424/assets/images`: AcademyUtility 부록용 이미지 자리

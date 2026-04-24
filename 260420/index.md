@@ -47,15 +47,17 @@ title: 260420 몬스터가 죽은 뒤 랙돌로 쓰러지고 아이템 박스를
 5. 언리얼 공식 문서를 통해 `Anim Notify`, `Physics Asset`, 충돌/오버랩, 트리거 개념이 엔진 표준 용어로 어떻게 정리되는지 확인한다.
 6. 현재 프로젝트 C++ 코드를 읽으며, 위 구조가 `MonsterBase`, `MonsterAnimInstance`, `ItemBox` 안에서 어떻게 하나의 사망 이후 파이프라인으로 이어지는지 확인한다.
 
-## 2026-04-23 덤프 반영 메모
+## 2026-04-24 최신 branch 추적 메모
 
-이번 보강에서는 `260420` 후반부를 몬스터 사망 연출이 아니라 "충돌 프로필, 물리 전환, 드롭 액터, 획득 트리거"까지 포함한 파이프라인으로 다시 묶었다. `Saved\AcademyUtility` 덤프를 보면 이 날짜가 왜 마무리 시스템 설계에 해당하는지가 훨씬 선명하게 보인다.
+이번 보강에서는 `260420` 후반부를 몬스터 사망 연출이 아니라 "충돌 프로필, 물리 전환, 드롭 액터, 획득 트리거"까지 포함한 파이프라인으로 다시 묶었다. `Saved\AcademyUtility` 덤프와 현재 `Monster/GAS` 소스를 같이 보면, 이 날짜가 왜 마무리 시스템 설계에 해당하는지가 더 선명해진다.
 
 - `DefaultEngine_FileDump.txt`에는 커스텀 충돌 프로필 `Monster`, `Ragdoll`, `ItemBox`가 모두 정의돼 있고, `Monster` 오브젝트 채널도 따로 잡혀 있다. 즉 랙돌과 드롭 박스는 기존 캐릭터 충돌을 대충 재활용한 것이 아니라, 이 날짜를 위해 분리된 충돌 규칙 위에 올라간다.
 - `MonsterAnimInstance_FileDump.txt`와 `MonsterBase_FileDump.txt`를 같이 보면, `AnimNotify_Death()`가 `Monster->Death()`로 후처리를 넘기고, 그 안에서 `SetCollisionProfileName(TEXT("Ragdoll"))`, `SetAllBodiesBelowSimulatePhysics(TEXT("pelvis"), true, true)`, `WakeAllRigidBodies()`, `SetLifeSpan(3.f)`가 이어진다. 그래서 사망은 애니메이션 재생과 물리 전환이 끊어지지 않게 연결된 하나의 핸드오프다.
 - 같은 `MonsterBase_FileDump.txt`는 몬스터가 정리되는 `EndPlay()` 시점에 `SpawnActor<AItemBox>`를 호출한다는 사실도 보여 준다. 즉 보상 박스는 사망 직후 즉시 뿌리는 구조가 아니라, 몬스터 액터 생명주기 종료와 맞물려 생성된다.
 - `ItemBox_FileDump.txt`를 보면 이 액터는 `/Game/Fantastic_Dungeon_Pack/meshes/props/container/SM_PROP_box_dungeon_03` 메시를 쓰고, 충돌 프로필은 `ItemBox`, 획득은 `OnComponentBeginOverlap.AddDynamic(...)`로 받는다. 또한 `StartDropAnimation()`, `FindGroundLocation()`, `EaseOutCubic(...)`, `mSpinSpeed = FRotator(720.0, 1080.0, 0.0)`가 있어, 영상에서 보이는 "튀어올랐다가 바닥에 안착하는 드롭"이 실제로 코드 연출까지 갖춘 상태임을 확인할 수 있다.
 - `Minion_Lane_Melee_Physics_AssetDump.txt`, `Minion_Lane_Ranged_Physics_AssetDump.txt`, `Death_A_AssetDump.txt`, `Death_Front_A_AssetDump.txt`, `SM_PROP_box_dungeon_03_AssetDump.txt`를 보면 근접/원거리 미니언 모두 전용 `PhysicsAsset`을 갖고 있고, 대표 사망 시퀀스 길이도 서로 다르며, 아이템 박스 메시 자체도 커스텀 충돌을 가진다. 즉 `260420`은 단순히 "죽으면 박스 하나 떨어진다"가 아니라, 몬스터 타입별 사망 자산과 드롭 오브젝트 물성까지 정리하는 단계다.
+- 현재 `AMonsterGAS::Death()`와 `AMonsterGAS::EndPlay()`를 보면 랙돌 전환과 `AItemBox` 생성 후반부는 `MonsterBase` 버전과 거의 동일하다. 즉 `260420`이 만든 "죽은 뒤 물리 전환 -> 수명 종료 -> 드롭 생성" 후반 파이프라인은 GAS branch에서도 그대로 재사용되는 축이다.
+- 반대로 `AMonsterGAS::TakeDamage()`는 예전의 `mHP` 차감과 `Death` 진입 코드가 아직 주석 상태다. 그래서 현재 branch에서 `260420`를 읽을 때는 "사망 후반 정리 레이어는 유지되고 있지만, 사망 진입점 자체는 아직 GAS 기준으로 완전히 재연결되지 않았다"는 점을 함께 기억해 두는 편이 맞다.
 
 ---
 
@@ -744,6 +746,9 @@ void AMonsterBase::Death()
 즉 현재 구현은 `mBody`를 끄고 `mMesh`를 랙돌로 켜는 2단계 전환 구조다.
 그래서 전투 판정용 충돌과 사망 후 물리용 충돌이 섞이지 않는다.
 
+짧은 현재 branch 추적 메모를 붙이면, `AMonsterGAS::Death()`도 이 본문과 거의 같은 코드 흐름을 유지한다.
+즉 `260420`의 랙돌 후반부는 legacy 전용 설명이 아니라, 현재 GAS 몬스터에도 그대로 대응되는 공통 후처리 층이라고 봐도 무리가 없다.
+
 ### 5.5 `EndPlay()`: 현재 구현에서 드롭 생성 책임은 몬스터 본체가 직접 가진다
 
 현재 프로젝트에서 아이템 박스 생성은 별도 드롭 매니저가 아니라 `AMonsterBase::EndPlay()`가 직접 맡는다.
@@ -777,6 +782,9 @@ void AMonsterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 - 드롭 확률이나 몬스터 종류별 보상 표가 아직 없다.
 
 즉 지금은 “무조건 상자를 떨군다”는 학습용 최소 구조에 가깝고, 이후엔 조건 분기가 붙을 여지가 크다.
+
+현재 branch에서도 이 지점은 거의 동일하다.
+`AMonsterGAS::EndPlay()`도 같은 방식으로 `AItemBox`를 생성하므로, 드롭 생성 책임은 아직 별도 시스템이 아니라 몬스터 본체 생명주기에 묶여 있다고 이해하면 된다.
 
 ### 5.6 `AItemBox` 생성자와 `BeginPlay()`: 보상 오브젝트가 스스로 드롭 연출을 책임진다
 

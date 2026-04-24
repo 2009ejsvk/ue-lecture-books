@@ -11,11 +11,11 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 
 이번 강의의 핵심은 아래 한 줄로 요약할 수 있다.
 
-`공격 입력 -> 공격 이벤트 전달 -> Ability 시작 -> 마나 비용 규칙 준비 -> 내 MP 차감 -> 적용 후 반응 준비`
+`공격 입력 -> 공격 이벤트 전달 -> Ability 시작 -> 내 MP 차감 -> 맞은 대상 HP 감소 -> GameplayCue로 타격 반응`
 
 코드 이름으로 다시 쓰면 아래 흐름이다.
 
-`GameplayEvent로 공격 Ability 발동 -> Source ASC/AttributeSet 확보 -> ManaCost GameplayEffect 생성 -> SetByCaller로 소모량 주입 -> ApplyGameplayEffectSpecToSelf -> PostGameplayEffectExecute로 후처리 준비`
+`GameplayEvent로 공격 Ability 발동 -> Source ASC/AttributeSet 확보 -> ManaCost GameplayEffect 생성 -> SetByCaller로 소모량 주입 -> ApplyGameplayEffectSpecToSelf -> TargetData 해석 -> Damage GameplayEffect 생성 -> ApplyGameplayEffectSpecToTarget -> PostGameplayEffectExecute와 GameplayCue로 마무리`
 
 즉 이번 날짜는 “GameplayEffect가 무엇인가”를 다시 설명하는 날이 아니라, `GameplayEffect를 우리 코드에 실제로 어떻게 꽂는가`를 다루는 실전편이다.
 
@@ -28,7 +28,11 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\GameplayAbility_Attack.cpp`
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\GameplayAbility_Base.cpp`
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_ManaCost.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Effect\GameplayEffect_Damage.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\Cue\Static\GameplayCueNotify_StaticBase.cpp`
 - `D:\UnrealProjects\UE_Academy_Stduy\Source\UE20252\GAS\BaseAttributeSet.cpp`
+- `D:\UnrealProjects\UE_Academy_Stduy\Config\DefaultGameplayTags.ini`
+- `D:\UnrealProjects\UE_Academy_Stduy\Config\DefaultGame.ini`
 
 ## 추천 읽기 순서
 
@@ -36,6 +40,7 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 2. 중급 1편: ManaCost GameplayEffect와 `SetByCaller`
 3. 중급 2편: Spec 적용과 `PostGameplayEffectExecute`
 4. 고급 1편: `TargetData`, `TargetASC`, 다음 데미지 파이프라인 예고
+5. 고급 2편: `Damage GameplayEffect`, `GameplayCue`, 실제 타겟 HP 감소 흐름
 
 ## 초급
 
@@ -57,6 +62,9 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 - [04. TargetData와 다음 데미지 이펙트 예고](./04_advanced_targetdata_and_damage_preview/)
   "맞은 대상 정보"를 꺼내 다음 데미지 처리로 넘기는 준비 단계를 설명한다. 여기부터는 용어가 조금 어려워져서 `01~03`을 읽고 오면 훨씬 쉽다.
 
+- [05. Damage GameplayEffect와 GameplayCue로 실제 피해를 적용하는 흐름](./05_advanced_damage_effect_and_gameplaycue/)
+  `GameplayAbility_Attack`이 만든 데미지 값을 `GameplayEffect_Damage`와 `GameplayCue.Battle.Attack`로 어떻게 마무리하는지 설명한다.
+
 ## 빠른 선택 가이드
 
 - `260421`는 읽었는데 “그걸 우리 프로젝트에는 어디에 붙이는지”가 아직 안 잡힌다
@@ -69,6 +77,8 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
   `01`, `04`
 - 다음 시간에 데미지 이펙트를 어디에 붙일지 미리 감을 잡고 싶다
   `04`
+- 실제로 타겟 HP가 깎이고 타격 이펙트가 어디서 붙는지 끝까지 보고 싶다
+  `04`, `05`
 
 ## 이 날짜의 핵심 목표
 
@@ -80,3 +90,4 @@ title: 260422 UE20252 실전 프로젝트로 이어지는 GameplayEffect 적용 
 - `AttributeSet은 값 저장소이면서, Effect 적용 이후 후처리 지점이기도 하다.`
 
 즉 `260422`는 `260421`의 개념 교재를 실전 코드로 번역하는 날짜다.
+앞쪽 1~3편이 "비용과 적용 구조를 심는 단계"였다면, 새로 보강한 5편은 그 구조가 실제로 타겟 HP 감소와 `GameplayCue` 반응까지 어떻게 이어지는지 마무리한다.

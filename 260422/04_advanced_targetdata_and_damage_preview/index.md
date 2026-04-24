@@ -4,7 +4,7 @@ title: 260422 고급 1편 - TargetData와 다음 데미지 이펙트 예고
 
 # 고급 1편. TargetData와 다음 데미지 이펙트 예고
 
-[이전: 중급 2편](../03_intermediate_spec_apply_and_post_execute/) | [허브](../)
+[이전: 중급 2편](../03_intermediate_spec_apply_and_post_execute/) | [허브](../) | [다음: 고급 2편](../05_advanced_damage_effect_and_gameplaycue/)
 
 ## 이 편의 목표
 
@@ -151,3 +151,7 @@ UAbilitySystemComponent* TargetASC =
 `HitData와 TargetASC까지 이미 확보됐으므로, 다음 단계는 데미지용 GameplayEffect를 타겟에게 적용하는 일만 남아 있다.`
 
 즉 `260422`의 끝은 미완성이 아니라, 다음 공격 시스템 강의로 자연스럽게 이어지는 설계 중간 지점이다.
+
+## 다음 편
+
+[고급 2편. Damage GameplayEffect와 GameplayCue로 실제 피해를 적용하는 흐름](../05_advanced_damage_effect_and_gameplaycue/)
